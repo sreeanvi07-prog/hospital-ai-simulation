@@ -1,0 +1,18 @@
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Mac OS directory files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
