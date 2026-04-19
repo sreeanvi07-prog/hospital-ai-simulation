@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaMed AI — Simulation Engine</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+    :root {
+      --bg: #020408;
+      --cyan: #00f5ff;
+      --purple: #a855f7;
+      --blue: #4f8ef7;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --green: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --glass-bg: rgba(8, 18, 38, 0.75);
+      --glass-border: rgba(0, 245, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden; /* No scrollbars in control room */
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    /* ═══════════ BACKGROUND & EFFECTS ═══════════ */
+    .bg-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image: radial-gradient(rgba(79,142,247,0.08) 2px, transparent 2px);
+      background-size: 40px 40px;
+    }
+
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0; opacity: 0.06;
+    }
+    .orb-cyan { width: 400px; height: 400px; background: var(--cyan); top: 10%; left: 20%; animation: orbit 20s infinite linear; }
+    .orb-purple { width: 300px; height: 300px; background: var(--purple); bottom: 20%; right: 10%; animation: orbit 25s infinite linear reverse; }
+    .orb-blue { width: 250px; height: 250px; background: var(--blue); top: 40%; left: 60%; animation: orbit 18s infinite linear; }
+
+    @keyframes orbit {
+      0% { transform: translate(0,0) rotate(0deg); }
+      50% { transform: translate(100px, 50px) rotate(180deg); }
+      100% { transform: translate(0,0) rotate(360deg); }
+    }
+
+    .scanline {
+      position: absolute; top: 0; left: 0; width: 100%; height: 2px; z-index: 999;
+      background: linear-gradient(to right, transparent, var(--cyan), transparent);
+      opacity: 0.15;
+      animation: scan 6s linear infinite;
+    }
+    @keyframes scan { 0% { top: -10px; } 100% { top: 100%; } }
+
+    .particle { position: absolute; border-radius: 50%; z-index: 1; opacity: 0; pointer-events: none; }
+    @keyframes particleUp {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      20% { opacity: 0.7; }
+      80% { opacity: 0.7; }
+      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+    }
+
+    /* ═══════════ FLOAT CORE ═══════════ */
+    @keyframes floatCard {
+      0%   { transform: translateY(0px) rotate(0deg); }
+      25%  { transform: translateY(-10px) rotate(0.4deg); }
+      50%  { transform: translateY(-16px) rotate(-0.3deg); }
+      75%  { transform: translateY(-8px) rotate(0.2deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    .float { animation: floatCard 5s ease-in-out infinite; }
+    .d-0 { animation-delay: 0s; } .d-1 { animation-delay: 0.4s; } .d-2 { animation-delay: 0.8s; }
+    .d-3 { animation-delay: 1.2s; } .d-4 { animation-delay: 1.6s; } .d-5 { animation-delay: 2.0s; }
+    .d-6 { animation-delay: 2.4s; } .d-7 { animation-delay: 2.8s; } .d-8 { animation-delay: 3.2s; }
+
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(79,142,247,0.08);
+      color: var(--text);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .glass:hover {
+      transform: translateY(-24px) rotateX(6deg) rotateY(-6deg) scale(1.03) !important;
+      box-shadow: 0 30px 60px rgba(0,245,255,0.3), 0 0 40px rgba(0,245,255,0.1) !important;
+      border-color: var(--cyan) !important;
+      z-index: 100;
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 40%, var(--purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-weight: 800; letter-spacing: -0.5px;
+    }
+
+    /* ═══════════ TOPBAR ═══════════ */
+    #topbar {
+      position: absolute; top: 16px; left: 16px; right: 16px; height: 64px;
+      display: flex; justify-content: space-between; align-items: center; padding: 0 24px;
+      z-index: 50;
+    }
+    .brain-pulse { animation: pulse 2s infinite; display: inline-block; font-size: 24px; margin-right: 8px;}
+    @keyframes pulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px var(--cyan));} 50% { transform: scale(1.1); filter: drop-shadow(0 0 10px var(--cyan));} }
+    
+    .clock { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--cyan); text-shadow: 0 0 15px rgba(0,245,255,0.5); }
+    
+    .status-badge { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid var(--amber); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(245,158,11,0.2); }
+    .live-dot { height: 8px; width: 8px; background: var(--green); border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px var(--green); animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    
+    .speed-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-family: 'JetBrains Mono'; font-weight: 700; font-size: 12px;}
+    .speed-btn.active { background: rgba(0,245,255,0.15); color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 15px rgba(0,245,255,0.2); }
+
+    /* ═══════════ LAYOUT ═══════════ */
+    .layout {
+      position: absolute; top: 100px; left: 16px; right: 16px; bottom: 16px;
+      display: flex; gap: 24px; z-index: 10;
+    }
+    .col-left { width: 28%; height: 100%; display: flex; flex-direction: column; }
+    .col-center { width: 44%; height: 100%; display: flex; flex-direction: column; }
+    .col-right { width: 28%; height: 100%; display: flex; flex-direction: column; }
+
+    /* ═══════════ LEFT: QUEUE ═══════════ */
+    .panel-header { padding-bottom: 16px; border-bottom: 1px solid var(--glass-border); margin-bottom: 16px; }
+    .queue-container { position: relative; flex: 1; width: 100%; }
+    
+    .patient-card {
+      position: absolute; left: 0; width: 100%; height: 70px;
+      transition: top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      animation: floatCard 4s ease-in-out infinite;
+    }
+    
+    /* Cond classes */
+    .cond-Critical { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+    .cond-Critical .c-text { color: var(--red); }
+    .cond-Moderate { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+    .cond-Moderate .c-text { color: var(--amber); }
+    .cond-Mild { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+    .cond-Mild .c-text { color: var(--green); }
+
+    .pt-rank { font-size: 16px; font-weight: 800; color: var(--muted); width: 24px; }
+    .pt-info { flex: 1; margin-left: 12px; }
+    .pt-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .pt-meta { font-size: 11px; color: var(--muted); display:flex; gap: 8px;}
+    .pt-timer { font-family: 'JetBrains Mono'; color: var(--cyan); }
+    
+    .pt-score { font-size: 24px; font-weight: 800; color: var(--cyan); text-shadow: 0 0 10px rgba(0,245,255,0.5); text-align: right;}
+    .pt-bar-bg { width: 100px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+    .pt-bar-fill { height: 100%; transition: width 0.5s; }
+
+    /* ═══════════ CENTER: AI ENGINE ═══════════ */
+    .brain-container { height: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    .hexagon { width: 120px; height: 138px; background: rgba(0,245,255,0.1); border: 2px solid var(--cyan); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: var(--cyan); box-shadow: 0 0 40px rgba(0,245,255,0.2) inset; position: relative; z-index: 10;}
+    .hex-pulse { position: absolute; inset: -20px; border: 1px solid var(--cyan); border-radius: 50%; opacity: 0; animation: radar 3s infinite;}
+    @keyframes radar { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+
+    .orbit-ring { position: absolute; border: 1px dashed rgba(255,255,255,0.1); border-radius: 50%; }
+    .ring-1 { width: 220px; height: 220px; animation: spin 10s linear infinite; }
+    .ring-2 { width: 300px; height: 300px; animation: spin 15s linear infinite reverse; }
+    .ring-3 { width: 380px; height: 380px; animation: spin 20s linear infinite; }
+    .orbit-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 15px currentColor; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .decision-display { height: 25%; margin-top: 16px; display: flex; flex-direction: column; justify-content: center; text-align: center;}
+    .dec-state { font-size: 14px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; color: var(--cyan); animation: blink 2s infinite; }
+    .dec-msg { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .dec-reason { font-size: 13px; color: var(--muted); }
+    .flash-cyan { animation: flashCyan 0.5s; }
+    @keyframes flashCyan { 0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.4); border-color: var(--glass-border);} 50% { box-shadow: 0 0 40px rgba(0,245,255,0.4); border-color: var(--cyan);} }
+
+    .pipeline { height: 15%; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; margin-top: 16px; position: relative;}
+    .pipe-node { width: 14px; height: 14px; border-radius: 50%; background: var(--glass-bg); border: 2px solid var(--muted); z-index: 2; position: relative; }
+    .pipe-line { position: absolute; height: 2px; background: var(--glass-border); top: 50%; left: 50px; right: 50px; z-index: 1;}
+    .pipe-label { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .node-active { border-color: var(--cyan); background: var(--cyan); box-shadow: 0 0 15px var(--cyan); }
+    .node-done { border-color: var(--green); background: var(--green); box-shadow: 0 0 15px var(--green); }
+
+    .activity-log { flex: 1; margin-top: 16px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; overflow-y: hidden; display: flex; flex-direction: column; justify-content: flex-end;}
+    .log-line { margin-bottom: 6px; opacity: 0; animation: slideInX 0.3s forwards; }
+    @keyframes slideInX { 0% { transform: translateX(-10px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+    /* ═══════════ RIGHT: RESOURCES & ANALYTICS ═══════════ */
+    .res-block { margin-bottom: 24px; padding: 16px; }
+    .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+    .res-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .res-bar-fill { height: 100%; transition: width 0.5s; }
+
+  </style>
+</head>
+<body>
+
+  <!-- BACKGROUND ELEMENTS -->
+  <div class="bg-grid"></div>
+  <div class="orb orb-cyan"></div>
+  <div class="orb orb-purple"></div>
+  <div class="orb orb-blue"></div>
+  <div class="scanline"></div>
+
+  <!-- TOPBAR -->
+  <div id="topbar" class="glass float d-0">
+    <div style="display:flex; align-items:center;">
+      <span class="brain-pulse">🧠</span>
+      <div>
+        <div class="grad-text" style="font-size: 20px;">NovaMed AI</div>
+        <div style="font-size: 11px; color: var(--cyan); letter-spacing: 1px;">ANTI-STARVATION PRIORITY ENGINE</div>
+      </div>
+    </div>
+    
+    <div class="clock" id="liveClock">00:00:00</div>
+    
+    <div style="display:flex; align-items:center; gap: 16px;">
+      <div><span class="live-dot"></span><span style="font-size: 12px; font-weight: 700; letter-spacing:1px; color:var(--text);">LIVE SYSTEM</span></div>
+      <div class="status-badge">Anti-Starvation: ACTIVE</div>
+      <div style="display:flex; gap: 6px;">
+        <button class="speed-btn active" onclick="setSpeed(1, this)">1x</button>
+        <button class="speed-btn" onclick="setSpeed(2, this)">2x</button>
+        <button class="speed-btn" onclick="setSpeed(5, this)">5x</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-COLUMN LAYOUT -->
+  <div class="layout">
+    
+    <!-- LEFT: QUEUE -->
+    <div class="col-left glass float d-1" style="padding: 24px;">
+      <div class="panel-header">
+        <h2 class="grad-text" style="font-size: 22px;">Priority Queue <span style="font-size:14px; background:var(--glass-border); padding:2px 8px; border-radius:12px; color:var(--text);" id="queueCount">8</span></h2>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Real-time AI Sorting Engine</div>
+      </div>
+      <div class="queue-container" id="queueContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- CENTER: AI ENGINE -->
+    <div class="col-center">
+      <div class="brain-container glass float d-2">
+        <div class="orbit-ring ring-1"><div class="orbit-dot" style="color:var(--red); background:var(--red);"></div></div>
+        <div class="orbit-ring ring-2"><div class="orbit-dot" style="color:var(--amber); background:var(--amber);"></div></div>
+        <div class="orbit-ring ring-3"><div class="orbit-dot" style="color:var(--green); background:var(--green);"></div></div>
+        <div class="hexagon">AI</div>
+        <div class="hex-pulse"></div>
+        <div style="position: absolute; bottom: 20px; font-family:'JetBrains Mono'; font-size:11px; color:var(--cyan); letter-spacing:2px; animation:blink 1.5s infinite" id="aiStateText">ANALYZING QUEUE...</div>
+      </div>
+
+      <div class="decision-display glass float d-3" id="decCard">
+        <div class="dec-state" id="decState">SCANNING</div>
+        <div class="dec-msg" id="decMsg">Monitoring waitlist anomalies...</div>
+        <div class="dec-reason" id="decReason">Algorithm active</div>
+      </div>
+
+      <div class="pipeline glass float d-4">
+        <div class="pipe-line"></div>
+        <div class="pipe-node node-active" id="pn0"><div class="pipe-label">Queue Top</div></div>
+        <div class="pipe-node" id="pn1"><div class="pipe-label">AI Analysis</div></div>
+        <div class="pipe-node" id="pn2"><div class="pipe-label">Check Asset</div></div>
+        <div class="pipe-node" id="pn3"><div class="pipe-label">Allocated</div></div>
+      </div>
+
+      <div class="activity-log glass float d-5" id="activityLog">
+        <!-- Lines injected via JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT: RESOURCES -->
+    <div class="col-right float d-6">
+      <div class="glass res-block" style="flex:1;">
+        <h2 class="grad-text mb-4" style="font-size: 20px; margin-bottom: 20px;">Hospital Resources</h2>
+        <div id="resContainer"></div>
+      </div>
+      
+      <div class="glass res-block" style="flex:1; margin-bottom:0;">
+        <h2 class="grad-text mb-4" style="font-size: 20px; margin-bottom: 20px;">Live Metrics</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div><div style="font-size:11px;color:var(--muted)">Avg Wait (Cr)</div><div style="font-size:24px;font-weight:800;color:var(--red)" id="mCr">2m</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Avg Wait (Md)</div><div style="font-size:24px;font-weight:800;color:var(--amber)" id="mMd">10m</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Overtakes</div><div style="font-size:24px;font-weight:800;color:var(--purple)" id="mOv">0</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Allocated</div><div style="font-size:24px;font-weight:800;color:var(--green)" id="mAl">0</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+// ═══════════════════════════════════════
+// 🌌 PARTICLES
+// ═══════════════════════════════════════
+function createParticles() {
+  const colors = ['#00f5ff','#4f8ef7','#a855f7','#ec4899'];
+  for(let i=0; i<60; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 2 + Math.random()*3;
+    const dur = 8 + Math.random()*10;
+    const del = Math.random()*10;
+    p.style.cssText = `width:${size}px; height:${size}px; left:${Math.random()*100}vw; bottom:-10px; background:${colors[Math.floor(Math.random()*colors.length)]}; animation:particleUp ${dur}s ${del}s linear infinite;`;
+    document.body.appendChild(p);
+  }
+}
+createParticles();
+
+// Clock
+setInterval(() => {
+  document.getElementById('liveClock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+}, 1000);
+
+// ═══════════════════════════════════════
+// 🧬 STATE & DATA
+// ═══════════════════════════════════════
+let simSpeed = 1;
+function setSpeed(s, el) {
+  simSpeed = s;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  log(`Simulation multiplier set to ${s}x`);
+}
+
+let overtakes = 0;
+let allocatedCount = 0;
+
+let patients = [
+  { id: 1, name: 'Ravi Kumar', age: 62, condition: 'Critical', waitMins: 2, score: 0 },
+  { id: 2, name: 'Kiran Das', age: 55, condition: 'Moderate', waitMins: 15, score: 0 },
+  { id: 3, name: 'Sneha Patel', age: 45, condition: 'Moderate', waitMins: 8, score: 0 },
+  { id: 4, name: 'Arjun Mehta', age: 30, condition: 'Mild', waitMins: 20, score: 0 },
+  { id: 5, name: 'Meera Joshi', age: 70, condition: 'Mild', waitMins: 35, score: 0 },
+  { id: 6, name: 'Deepak Rao', age: 48, condition: 'Mild', waitMins: 12, score: 0 },
+  { id: 7, name: 'Priya Nair', age: 38, condition: 'Moderate', waitMins: 5, score: 0 },
+  { id: 8, name: 'Suresh Kumar', age: 65, condition: 'Critical', waitMins: 1, score: 0 }
+];
+
+let resources = {
+  icu: { name: 'ICU Beds', total: 6, occ: 6, color: 'var(--red)' },
+  vent: { name: 'Ventilators', total: 4, occ: 4, color: 'var(--blue)' },
+  ward: { name: 'General Ward', total: 20, occ: 18, color: 'var(--amber)' }
+};
+
+// ═══════════════════════════════════════
+// 🧠 LOGIC
+// ═══════════════════════════════════════
+function calcScore(p) {
+  const cBase = p.condition === 'Critical' ? 100 : p.condition === 'Moderate' ? 60 : 30;
+  const wBonus = p.waitMins * 2.5;
+  const aBonus = p.age > 60 ? 10 : p.age > 45 ? 5 : 0;
+  return Number((cBase + wBonus + aBonus).toFixed(1));
+}
+
+function processQueue() {
+  if (patients.length === 0) return;
+  // Increase wait time
+  patients.forEach(p => {
+    p.waitMins += (0.04 * simSpeed); 
+    p.score = calcScore(p);
+  });
+
+  // Remember old order
+  const oldOrder = patients.map(p => p.id);
+
+  // Sort
+  patients.sort((a,b) => b.score - a.score);
+
+  // Detect overtakes
+  const newOrder = patients.map(p => p.id);
+  if(JSON.stringify(oldOrder) !== JSON.stringify(newOrder)) {
+     overtakes++;
+     document.getElementById('mOv').textContent = overtakes;
+     log(`⚡ Anti-starvation overtake detected! Wait time bonus shifted priority.`);
+  }
+
+  renderQueue();
+  updateMetrics();
+}
+
+function renderQueue() {
+  const container = document.getElementById('queueContainer');
+  document.getElementById('queueCount').textContent = patients.length;
+  
+  if(container.children.length === 0) {
+    // Initial DOM build
+    patients.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = `patient-card class glass float cond-${p.condition}`;
+      div.id = `pt-${p.id}`;
+      // stagger float animation phase based on random
+      div.style.animationDelay = `-${Math.random()*5}s`;
+      div.innerHTML = `
+        <div class="pt-rank">#${i+1}</div>
+        <div class="pt-info">
+          <div class="pt-name">${p.name} <span style="font-weight:400; color:var(--muted)">(${p.age})</span></div>
+          <div class="pt-meta">
+            <span class="c-text" style="font-weight:700">${p.condition.toUpperCase()}</span>
+            Wait: <span class="pt-timer" id="t-${p.id}">00:00</span>
+          </div>
+        </div>
+        <div>
+          <div class="pt-score" id="s-${p.id}">${p.score.toFixed(1)}</div>
+          <div class="pt-bar-bg"><div class="pt-bar-fill" id="b-${p.id}"></div></div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // Update positions & values
+  const maxScore = Math.max(...patients.map(p=>p.score));
+  patients.forEach((p, index) => {
+    const el = document.getElementById(`pt-${p.id}`);
+    if(el) {
+      el.style.top = `${index * 82}px`;
+      el.querySelector('.pt-rank').textContent = `#${index+1}`;
+      
+      const m = Math.floor(p.waitMins);
+      const s = Math.floor((p.waitMins % 1)*60).toString().padStart(2,'0');
+      document.getElementById(`t-${p.id}`).textContent = `${m.toString().padStart(2,'0')}:${s}`;
+      
+      const scoreEl = document.getElementById(`s-${p.id}`);
+      scoreEl.textContent = p.score.toFixed(1);
+      
+      const bar = document.getElementById(`b-${p.id}`);
+      bar.style.width = `${(p.score/maxScore)*100}%`;
+      bar.style.background = p.score > 130 ? 'var(--red)' : p.score > 90 ? 'var(--amber)' : 'var(--green)';
+    }
+  });
+}
+
+function updateMetrics() {
+  const cr = patients.filter(p=>p.condition==='Critical');
+  const md = patients.filter(p=>p.condition==='Moderate');
+  document.getElementById('mCr').textContent = cr.length ? Math.floor(cr.reduce((a,b)=>a+b.waitMins,0)/cr.length) + 'm' : '0m';
+  document.getElementById('mMd').textContent = md.length ? Math.floor(md.reduce((a,b)=>a+b.waitMins,0)/md.length) + 'm' : '0m';
+}
+
+function renderResources() {
+  const c = document.getElementById('resContainer');
+  c.innerHTML = Object.values(resources).map(r => `
+    <div class="res-row">
+      <span>${r.name}</span>
+      <span style="color:${r.occ>=r.total?'var(--red)':'var(--green)'}">${r.occ}/${r.total} <span style="font-weight:400;color:var(--muted)">occ</span></span>
+    </div>
+    <div class="res-bar-bg mb-4" style="margin-bottom:16px"><div class="res-bar-fill" style="width:${(r.occ/r.total)*100}%; background:${r.occ>=r.total?'var(--red)':'var(--green)'}"></div></div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// 📝 LOGGER
+// ═══════════════════════════════════════
+function log(msg) {
+  const c = document.getElementById('activityLog');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span style="color:var(--cyan)">[${new Date().toLocaleTimeString('en-US',{hour12:false})}]</span> ${msg}`;
+  c.appendChild(line);
+  if(c.children.length > 8) c.removeChild(c.firstChild);
+  c.scrollTop = c.scrollHeight;
+}
+
+// ═══════════════════════════════════════
+// 🤖 PIPELINE SIMULATION
+// ═══════════════════════════════════════
+function runPipeline() {
+  if (patients.length === 0) {
+    // Keep checking every few seconds if empty
+    setTimeout(runPipeline, 2000 / (simSpeed || 1));
+    return;
+  }
+
+  const card = document.getElementById('decCard');
+  const state = document.getElementById('decState');
+  const msg = document.getElementById('decMsg');
+  const reason = document.getElementById('decReason');
+  const aiText = document.getElementById('aiStateText');
+
+  // Random free resource
+  if(Math.random() > 0.4) {
+    const keys = Object.keys(resources);
+    const k = keys[Math.floor(Math.random()*keys.length)];
+    if(resources[k].occ > 0) {
+      resources[k].occ--;
+      log(`Resource freed: ${resources[k].name}`);
+      renderResources();
+    }
+  }
+
+  // Animation Sequence
+  let step = 0;
+  const nodes = [document.getElementById('pn0'), document.getElementById('pn1'), document.getElementById('pn2'), document.getElementById('pn3')];
+  
+  const targetPatient = patients[0];
+  let resNeeded = targetPatient.condition === 'Critical' ? 'icu' : targetPatient.condition === 'Moderate' ? 'vent' : 'ward';
+
+  const int = setInterval(() => {
+    // Reset nodes
+    nodes.forEach(n => { n.classList.remove('node-active','node-done'); });
+    
+    // Set active
+    for(let i=0; i<step; i++) nodes[i].classList.add('node-done');
+    if(step < 4) nodes[step].classList.add('node-active');
+
+    if (step === 0) {
+      aiText.textContent = "EXTRACTING TOP PRIORITY...";
+      state.textContent = "SCANNING QUEUE"; state.style.color = "var(--cyan)";
+      msg.textContent = "Analyzing waitlist priorities...";
+      reason.textContent = "Algorithm locking on top candidate";
+      card.className = "decision-display glass float d-3";
+    } 
+    else if (step === 1) {
+      aiText.textContent = "EVALUATING REQUIREMENTS...";
+      state.textContent = "EVALUATING";
+      msg.textContent = `Patient: ${targetPatient.name}`;
+      reason.textContent = `Priority: ${targetPatient.score.toFixed(1)} | Requested: ${resources[resNeeded].name}`;
+    }
+    else if (step === 2) {
+      aiText.textContent = "CHECKING INVENTORY...";
+      if(resources[resNeeded].occ < resources[resNeeded].total) {
+        state.textContent = "RESOURCE AVAILABLE";
+      } else {
+        state.textContent = "RESOURCE CAPACITY LIMIT"; state.style.color = "var(--red)";
+        msg.textContent = `${resources[resNeeded].name} full!`;
+        reason.textContent = "Halting allocation. Awaiting discharge.";
+        card.className = "decision-display glass float d-3";
+        clearInterval(int);
+        setTimeout(runPipeline, 4000 / simSpeed);
+        return;
+      }
+    }
+    else if (step === 3) {
+      // Allocate!
+      aiText.textContent = "ALLOCATING ASSET...";
+      resources[resNeeded].occ++;
+      state.textContent = "ALLOCATION CONFIRMED"; state.style.color = "var(--green)";
+      msg.textContent = `Assigned ${resources[resNeeded].name} to ${targetPatient.name}`;
+      reason.textContent = targetPatient.condition === 'Critical' ? "🔴 Critical urgency — immediate allocation" : targetPatient.score > 90 ? "🤖 Anti-starvation triggered due to long wait" : "⚖️ Fairness queue adjustment";
+      card.classList.add('flash-cyan');
+      
+      // Remove from queue
+      patients.shift();
+      const el = document.getElementById(`pt-${targetPatient.id}`);
+      if(el) {
+        el.style.transform = 'translateX(-100%)'; el.style.opacity = '0';
+        setTimeout(() => el.remove(), 800);
+      }
+      
+      allocatedCount++;
+      document.getElementById('mAl').textContent = allocatedCount;
+      log(`✅ ALLOCATED: ${targetPatient.name} → ${resources[resNeeded].name} (Score: ${targetPatient.score.toFixed(1)})`);
+      renderResources();
+    }
+    else if (step === 4) {
+      clearInterval(int);
+      setTimeout(runPipeline, 2000 / simSpeed);
+    }
+    step++;
+  }, 1000 / simSpeed);
+}
+
+// ═══════════════════════════════════════
+// 🚀 BOOT
+// ═══════════════════════════════════════
+renderQueue();
+renderResources();
+log("System initialized. AI Engine online.");
+
+// Core game loops
+setInterval(processQueue, 1000); // 1 real second tick for wait queue scoring
+
+// Infinity Engine: generate new patients dynamically
+let nameCounter = 8;
+const randomNames = ['Amit Singh','Sunita Devi','Vikram Sharma','Neha Gupta','Rohan Verma','Pooja Patel','Anil Kumar','Gita Reddy'];
+setInterval(() => {
+  if (patients.length < 8) {
+    nameCounter++;
+    const conds = ['Critical', 'Moderate', 'Mild', 'Mild'];
+    const c = conds[Math.floor(Math.random()*conds.length)];
+    const p = {
+      id: nameCounter,
+      name: randomNames[Math.floor(Math.random()*randomNames.length)],
+      age: 20 + Math.floor(Math.random()*60),
+      condition: c,
+      waitMins: 0,
+      score: 0
+    };
+    p.score = calcScore(p);
+    patients.push(p);
+    log(`📥 NEW ARRIVAL: ${p.name} added to queue (${c})`);
+    
+    // Completely rebuild DOM so the new node exists
+    document.getElementById('queueContainer').innerHTML = '';
+    renderQueue();
+  }
+}, 8000 / simSpeed);
+
+setTimeout(runPipeline, 2000);
+
+</script>
+</body>
+</html>

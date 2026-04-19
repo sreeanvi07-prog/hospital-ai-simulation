@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaMed AI — Intelligent Resource Allocation Platform</title>
+<meta name="description" content="NovaMed AI: An intelligent, AI-powered medical resource allocation platform with real-time tracking, smart scheduling, and transparent queue management.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════ RESET & BASE ═══════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#020408;--cyan:#00f5ff;--blue:#4f8ef7;--purple:#a855f7;--pink:#ec4899;
+  --green:#10b981;--amber:#f59e0b;--red:#ef4444;--text:#e2e8f0;--muted:#64748b;
+  --glass-bg:rgba(10,22,40,0.7);--glass-border:rgba(0,245,255,0.15);
+  --glass-shadow:0 0 30px rgba(79,142,247,0.15);
+  --sidebar-w:260px;--topbar-h:60px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+  overflow-x:hidden;min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 50%,rgba(79,142,247,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(168,85,247,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(0,245,255,0.05) 0%,transparent 50%),
+    radial-gradient(circle at 1px 1px,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,100% 100%,24px 24px;
+}
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}
+::-webkit-scrollbar-thumb{background:rgba(0,245,255,0.3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,245,255,0.6)}
+
+/* ═══════════ ANIMATIONS ═══════════ */
+@keyframes floatCard{
+  0%,100%{transform:translateY(0px) rotate(0deg)}
+  33%{transform:translateY(-12px) rotate(0.3deg)}
+  66%{transform:translateY(-6px) rotate(-0.2deg)}
+}
+@keyframes orbDrift1{
+  0%{transform:translate(0,0)}25%{transform:translate(60px,-40px)}
+  50%{transform:translate(-30px,-80px)}75%{transform:translate(-60px,20px)}100%{transform:translate(0,0)}
+}
+@keyframes orbDrift2{
+  0%{transform:translate(0,0)}25%{transform:translate(-50px,60px)}
+  50%{transform:translate(40px,30px)}75%{transform:translate(70px,-40px)}100%{transform:translate(0,0)}
+}
+@keyframes orbDrift3{
+  0%{transform:translate(0,0)}25%{transform:translate(30px,50px)}
+  50%{transform:translate(-60px,-20px)}75%{transform:translate(20px,-60px)}100%{transform:translate(0,0)}
+}
+@keyframes scanline{0%{top:-2px}100%{top:100%}}
+@keyframes particleUp{
+  0%{transform:translateY(0) translateX(0);opacity:0}
+  10%{opacity:0.8}90%{opacity:0.8}
+  100%{transform:translateY(-100vh) translateX(30px);opacity:0}
+}
+@keyframes particleSway{
+  0%,100%{transform:translateX(0)}50%{transform:translateX(20px)}
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes neonPulse{0%,100%{box-shadow:0 0 5px var(--cyan),0 0 10px var(--cyan)}50%{box-shadow:0 0 15px var(--cyan),0 0 30px var(--cyan)}}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes flashGreen{0%{background:rgba(16,185,129,0.3)}100%{background:transparent}}
+@keyframes flashRed{0%{background:rgba(239,68,68,0.3)}100%{background:transparent}}
+@keyframes soundWave{0%,100%{height:8px}50%{height:24px}}
+@keyframes typewriter{from{width:0}to{width:100%}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes statusGlow{0%,100%{box-shadow:0 0 5px var(--cyan)}50%{box-shadow:0 0 20px var(--cyan),0 0 40px var(--cyan)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ═══════════ BACKGROUND ORBS ═══════════ */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-1{width:400px;height:400px;background:rgba(79,142,247,0.12);top:10%;left:10%;animation:orbDrift1 20s ease-in-out infinite}
+.orb-2{width:350px;height:350px;background:rgba(168,85,247,0.1);top:50%;right:10%;animation:orbDrift2 25s ease-in-out infinite}
+.orb-3{width:300px;height:300px;background:rgba(0,245,255,0.08);bottom:10%;left:40%;animation:orbDrift3 22s ease-in-out infinite}
+
+/* ═══════════ SCANLINE ═══════════ */
+.scanline{position:fixed;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanline 5s linear infinite;opacity:0.15;z-index:9999;pointer-events:none}
+
+/* ═══════════ PARTICLES ═══════════ */
+.particle{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+
+/* ═══════════ GLASS CARD ═══════════ */
+.glass{
+  background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);border-radius:16px;
+  box-shadow:var(--glass-shadow);position:relative;
+  transition:all 0.3s ease;
+}
+.glass:hover{
+  transform:translateY(-20px) rotateX(4deg) rotateY(-4deg) !important;
+  box-shadow:0 0 50px rgba(0,245,255,0.3),0 20px 60px rgba(79,142,247,0.2);
+  border-color:rgba(0,245,255,0.4);
+}
+.float-card{animation:floatCard 5s ease-in-out infinite}
+
+/* Corner brackets */
+.hud-corners{position:relative}
+.hud-corners::before,.hud-corners::after{
+  content:'';position:absolute;width:20px;height:20px;
+  border-color:var(--cyan);border-style:solid;opacity:0.4;
+}
+.hud-corners::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:16px 0 0 0}
+.hud-corners::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 16px 0}
+
+/* ═══════════ GRADIENT TEXT ═══════════ */
+.grad-text{
+  background:linear-gradient(135deg,#00f5ff,#4f8ef7,#a855f7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* ═══════════ STATUS DOT ═══════════ */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;animation:blink 2s infinite}
+.dot-green{background:var(--green)}.dot-red{background:var(--red)}
+.dot-amber{background:var(--amber)}.dot-cyan{background:var(--cyan)}
+
+/* ═══════════ BUTTONS ═══════════ */
+.btn{
+  padding:10px 20px;border-radius:10px;border:1px solid var(--glass-border);
+  background:rgba(0,245,255,0.1);color:var(--cyan);cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+  transition:all 0.3s ease;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:rgba(0,245,255,0.2);box-shadow:0 0 20px rgba(0,245,255,0.2);transform:translateY(-2px)}
+.btn-primary{background:linear-gradient(135deg,rgba(0,245,255,0.2),rgba(79,142,247,0.2));border-color:var(--cyan)}
+.btn-danger{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:var(--red)}
+.btn-danger:hover{background:rgba(239,68,68,0.3);box-shadow:0 0 20px rgba(239,68,68,0.3)}
+.btn-success{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--green)}
+.btn-amber{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:var(--amber)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+
+/* ═══════════ FORMS ═══════════ */
+input,select,textarea{
+  width:100%;padding:10px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(100,116,139,0.3);
+  border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;
+  transition:border-color 0.3s;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,245,255,0.15)}
+textarea{resize:vertical;min-height:60px}
+label{font-size:13px;color:var(--muted);margin-bottom:4px;display:block;font-weight:500}
+select option{background:#0a1628;color:var(--text)}
+
+/* ═══════════ AUTH SCREEN ═══════════ */
+#authScreen{
+  position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+  background-image:
+    radial-gradient(ellipse at 30% 40%,rgba(79,142,247,0.1) 0%,transparent 50%),
+    radial-gradient(ellipse at 70% 60%,rgba(168,85,247,0.1) 0%,transparent 50%);
+  transition:opacity 0.6s,transform 0.6s;
+}
+#authScreen.hiding{opacity:0;transform:scale(1.05)}
+.auth-card{width:440px;max-width:95vw;padding:40px;animation:floatCard 6s ease-in-out infinite}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid var(--glass-border)}
+.auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.3s;border:none;font-family:'Inter';font-size:14px;font-weight:500}
+.auth-tab.active{background:rgba(0,245,255,0.15);color:var(--cyan)}
+.role-selector{display:flex;gap:10px;margin:16px 0}
+.role-btn{
+  flex:1;padding:12px 8px;border-radius:12px;border:1px solid var(--glass-border);
+  background:rgba(0,0,0,0.3);color:var(--muted);cursor:pointer;
+  text-align:center;transition:all 0.3s;font-family:'Inter';font-size:13px;
+}
+.role-btn.selected{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 20px rgba(0,245,255,0.2);background:rgba(0,245,255,0.1)}
+.role-btn span{display:block;font-size:24px;margin-bottom:4px}
+
+/* ═══════════ LAYOUT ═══════════ */
+#appShell{display:none;opacity:0;transition:opacity 0.5s}
+#appShell.visible{display:flex;opacity:1}
+
+/* TOPBAR */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
+  background:rgba(2,4,8,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:1000;
+}
+.topbar-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700}
+.topbar-logo .logo-icon{font-size:28px;animation:floatCard 3s ease-in-out infinite}
+
+/* TOPBAR SEARCH */
+.topbar-search {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  margin: 0 20px;
+}
+.topbar-search input {
+  width: 100%; padding: 8px 16px 8px 36px; border-radius: 20px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+  color: var(--text); font-family: 'Inter'; font-size: 13px; transition: all 0.3s;
+}
+.topbar-search input:focus {
+  background: rgba(0,245,255,0.05); border-color: var(--cyan); outline: none;
+  box-shadow: 0 0 10px rgba(0,245,255,0.2);
+}
+.search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 14px; pointer-events: none;
+}
+.search-dropdown {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+  background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px;
+  z-index: 2000; max-height: 300px; overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.search-item {
+  padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.search-item:hover { background: rgba(0,245,255,0.1); }
+.search-item-title { font-size: 13px; font-weight: 600; display: block; color: var(--cyan); }
+.search-item-sub { font-size: 11px; color: var(--muted); }
+
+.topbar-right{display:flex;align-items:center;gap:16px}
+.lang-btn{
+  padding:4px 10px;border-radius:6px;border:1px solid var(--glass-border);
+  background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;
+  transition:all 0.3s;font-family:'Inter';
+}
+.lang-btn.active{background:rgba(0,245,255,0.1);color:var(--cyan);border-color:var(--cyan)}
+.notif-bell{position:relative;cursor:pointer;font-size:20px;padding:4px}
+.notif-badge{
+  position:absolute;top:-2px;right:-4px;width:16px;height:16px;border-radius:50%;
+  background:var(--red);color:#fff;font-size:9px;display:flex;align-items:center;
+  justify-content:center;font-weight:700;
+}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.role-badge{font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,245,255,0.15);color:var(--cyan);font-weight:600;text-transform:uppercase}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:var(--topbar-h);left:0;bottom:0;width:var(--sidebar-w);
+  background:rgba(2,4,8,0.9);backdrop-filter:blur(20px);border-right:1px solid var(--glass-border);
+  padding:16px 0;overflow-y:auto;z-index:999;transition:transform 0.3s;
+}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:12px 24px;cursor:pointer;
+  color:var(--muted);transition:all 0.3s;font-size:14px;font-weight:500;position:relative;
+}
+.nav-item:hover{color:var(--text);background:rgba(0,245,255,0.05)}
+.nav-item.active{color:var(--cyan);background:rgba(0,245,255,0.08);border-left:3px solid var(--cyan)}
+.nav-item .nav-icon{font-size:18px;width:24px;text-align:center}
+.nav-badge{
+  margin-left:auto;background:var(--red);color:#fff;font-size:10px;
+  padding:1px 6px;border-radius:10px;font-weight:700;
+}
+
+/* MAIN CONTENT */
+.main-content{
+  margin-left:var(--sidebar-w);margin-top:var(--topbar-h);padding:24px;
+  min-height:calc(100vh - var(--topbar-h));position:relative;z-index:1;
+}
+.section{display:none;animation:fadeInUp 0.4s ease}
+.section.active{display:block}
+.section-title{font-size:28px;font-weight:800;margin-bottom:4px}
+.section-subtitle{color:var(--muted);font-size:14px;margin-bottom:24px}
+
+/* ═══════════ GRID ═══════════ */
+.grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-5{grid-template-columns:repeat(5,1fr)}
+.grid-6{grid-template-columns:repeat(6,1fr)}
+@media(max-width:1200px){.grid-4,.grid-5,.grid-6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}.sidebar{transform:translateX(-100%)}.main-content{margin-left:0}}
+
+/* ═══════════ RESOURCE CARDS ═══════════ */
+.resource-card{padding:20px}
+.resource-card .rc-icon{font-size:28px;margin-bottom:8px}
+.resource-card .rc-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px}
+.progress-bar{
+  width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;
+  overflow:hidden;margin:10px 0;
+}
+.progress-fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+.rc-stats{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.rc-stat-val{font-size:18px;font-weight:700;color:var(--text);display:block}
+.status-badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  margin-top:8px;
+}
+.badge-available{background:rgba(16,185,129,0.15);color:var(--green)}
+.badge-moderate{background:rgba(245,158,11,0.15);color:var(--amber)}
+.badge-high{background:rgba(239,68,68,0.15);color:var(--red)}
+.badge-critical{background:rgba(239,68,68,0.25);color:var(--red);animation:pulse 1.5s infinite}
+
+/* ═══════════ TABLES ═══════════ */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--glass-border);
+  color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;
+}
+.data-table td{padding:10px 12px;border-bottom:1px solid rgba(100,116,139,0.1)}
+.data-table tr:hover td{background:rgba(0,245,255,0.03)}
+.data-table .flash-green{animation:flashGreen 1s ease}
+.data-table .flash-red{animation:flashRed 1s ease}
+
+/* ═══════════ TOAST ═══════════ */
+#toastContainer{position:fixed;bottom:20px;right:20px;z-index:99999;display:flex;flex-direction:column-reverse;gap:8px;max-width:380px}
+.toast{
+  padding:14px 18px;border-radius:12px;display:flex;align-items:flex-start;gap:10px;
+  animation:slideInRight 0.3s ease;backdrop-filter:blur(20px);border:1px solid;
+  font-size:13px;min-width:300px;position:relative;
+}
+.toast.removing{animation:slideOutRight 0.3s ease;opacity:0}
+.toast-success{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--green)}
+.toast-info{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.3);color:var(--blue)}
+.toast-warning{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:var(--amber)}
+.toast-error{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:var(--red)}
+.toast-close{position:absolute;top:8px;right:10px;cursor:pointer;opacity:0.6;background:none;border:none;color:inherit;font-size:16px}
+.toast-title{font-weight:600;font-size:14px}
+.toast-body{opacity:0.85}
+
+/* ═══════════ NOTIFICATION DROPDOWN ═══════════ */
+.notif-dropdown{
+  position:absolute;top:calc(var(--topbar-h) - 4px);right:80px;width:340px;
+  max-height:360px;overflow-y:auto;padding:8px;display:none;z-index:10001;
+}
+.notif-dropdown.show{display:block}
+.notif-item{display:flex;gap:10px;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;transition:background 0.2s}
+.notif-item:hover{background:rgba(0,245,255,0.05)}
+.notif-item .ni-icon{font-size:18px;flex-shrink:0}
+.notif-item .ni-text{flex:1}.notif-item .ni-time{font-size:11px;color:var(--muted)}
+
+/* ═══════════ QUEUE ═══════════ */
+.queue-row{transition:all 0.5s}
+.status-step{display:flex;align-items:center;gap:0}
+.step{text-align:center;flex:1;position:relative}
+.step-dot{
+  width:28px;height:28px;border-radius:50%;border:2px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  margin:0 auto 4px;transition:all 0.3s;background:rgba(0,0,0,0.5);
+}
+.step.active .step-dot{border-color:var(--cyan);box-shadow:0 0 15px var(--cyan);animation:statusGlow 2s infinite;background:rgba(0,245,255,0.15)}
+.step.completed .step-dot{border-color:var(--green);background:rgba(16,185,129,0.2);color:var(--green)}
+.step-label{font-size:10px;color:var(--muted)}
+.step-line{position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--glass-border);z-index:-1}
+.step.completed .step-line{background:var(--green)}
+.step.active .step-line{background:var(--cyan)}
+
+/* ═══════════ DIGITAL TWIN ═══════════ */
+.bed-grid{display:grid;gap:6px}
+.bed-cell{
+  width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;
+  border:1px solid rgba(255,255,255,0.1);transition:all 0.3s;position:relative;
+}
+.bed-cell:hover{transform:scale(1.1);z-index:2}
+.bed-available{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.5);color:var(--green)}
+.bed-occupied{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.5);color:var(--red)}
+.bed-reserved{background:rgba(245,158,11,0.3);border-color:rgba(245,158,11,0.5);color:var(--amber)}
+.bed-maint{background:rgba(100,116,139,0.3);border-color:rgba(100,116,139,0.5);color:var(--muted)}
+.bed-tooltip{
+  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  padding:8px 12px;border-radius:8px;font-size:11px;white-space:nowrap;
+  display:none;z-index:100;min-width:150px;
+}
+.bed-cell:hover .bed-tooltip{display:block}
+
+/* Floor map */
+.floor-map{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:auto auto;gap:8px;max-width:700px}
+.floor-room{
+  padding:20px;border-radius:12px;text-align:center;font-weight:600;font-size:13px;
+  border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all 0.3s;position:relative;
+}
+.floor-room:hover{transform:translateY(-4px)}
+
+/* ═══════════ VOICE ═══════════ */
+.mic-btn{
+  width:80px;height:80px;border-radius:50%;border:2px solid var(--cyan);
+  background:rgba(0,245,255,0.1);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:32px;transition:all 0.3s;
+}
+.mic-btn:hover{box-shadow:0 0 30px var(--cyan)}
+.mic-btn.listening{border-color:var(--red);background:rgba(239,68,68,0.2);animation:neonPulse 1s infinite}
+.sound-wave{display:flex;gap:3px;align-items:center;justify-content:center;height:30px}
+.sound-bar{width:4px;background:var(--cyan);border-radius:2px;animation:soundWave 0.6s ease-in-out infinite}
+.voice-chip{
+  display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;
+  background:rgba(0,245,255,0.1);border:1px solid var(--glass-border);color:var(--text);
+  margin:3px;cursor:pointer;transition:all 0.3s;
+}
+.voice-chip:hover{background:rgba(0,245,255,0.2);border-color:var(--cyan)}
+
+/* ═══════════ ADMIN TOGGLES ═══════════ */
+.toggle-switch{
+  width:44px;height:24px;border-radius:12px;background:rgba(100,116,139,0.3);
+  position:relative;cursor:pointer;transition:background 0.3s;border:1px solid var(--glass-border);
+}
+.toggle-switch.on{background:rgba(0,245,255,0.3);border-color:var(--cyan)}
+.toggle-switch::after{
+  content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:var(--muted);transition:all 0.3s;
+}
+.toggle-switch.on::after{left:22px;background:var(--cyan)}
+
+/* ═══════════ MODAL ═══════════ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;z-index:50000;
+}
+.modal-overlay.show{display:flex}
+.modal{max-width:600px;width:95%;max-height:80vh;overflow-y:auto;padding:30px}
+
+/* ═══════════ SPINNER ═══════════ */
+.spinner{width:20px;height:20px;border:2px solid var(--glass-border);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
+
+/* ═══════════ MISC ═══════════ */
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}
+.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}.mt-2{margin-top:8px}.mt-4{margin-top:16px}
+.p-3{padding:12px}.p-4{padding:16px}.p-5{padding:20px}
+.text-sm{font-size:13px}.text-xs{font-size:11px}.text-lg{font-size:18px}
+.font-bold{font-weight:700}.font-semibold{font-weight:600}
+.w-full{width:100%}.text-center{text-align:center}
+.hidden{display:none !important}
+.overflow-auto{overflow-x:auto}
+.condition-critical{color:var(--red)}.condition-moderate{color:var(--amber)}.condition-mild{color:var(--green)}
+.chart-container{position:relative;max-height:280px}
+.emergency-btn{
+  padding:14px 28px;border-radius:12px;border:2px solid var(--red);
+  background:rgba(239,68,68,0.2);color:var(--red);font-size:16px;font-weight:700;
+  cursor:pointer;transition:all 0.3s;font-family:'Inter';
+}
+.emergency-btn:hover{background:rgba(239,68,68,0.4);box-shadow:0 0 30px rgba(239,68,68,0.4);transform:scale(1.05)}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND ORBS -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ═══════════ AUTH SCREEN ═══════════ -->
+<div id="authScreen">
+  <div class="auth-card glass hud-corners" id="authCard">
+    <div class="text-center mb-4">
+      <div style="font-size:40px;margin-bottom:8px">🏥</div>
+      <h1 class="grad-text" style="font-size:24px;font-weight:800">NovaMed AI</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px">Intelligent Resource Allocation Platform</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')" id="loginTab">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')" id="signupTab">Sign Up</button>
+    </div>
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="mb-3"><label>Email</label><input type="email" id="loginEmail" placeholder="doctor@novamed.ai"></div>
+      <div class="mb-3"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <label>Select Role</label>
+      <div class="role-selector">
+        <div class="role-btn" onclick="selectRole('admin',this)" data-role="admin"><span>🛡️</span>Admin</div>
+        <div class="role-btn" onclick="selectRole('doctor',this)" data-role="doctor"><span>🩺</span>Doctor</div>
+        <div class="role-btn" onclick="selectRole('student',this)" data-role="student"><span>🎓</span>Student</div>
+      </div>
+      <button class="btn btn-primary w-full mt-2" onclick="doLogin()" style="justify-content:center;padding:12px;font-size:15px;font-weight:600">🚀 Launch Dashboard</button>
+    </div>
+    <!-- Signup Form -->
+    <div id="signupForm" style="display:none">
+      <div class="grid grid-2 gap-2 mb-3">
+        <div><label>First Name</label><input id="signFirst" placeholder="Jane"></div>
+        <div><label>Last Name</label><input id="signLast" placeholder="Doe"></div>
+      </div>
+      <div class="mb-3"><label>Institution</label><input id="signInst" placeholder="NovaMed Hospital"></div>
+      <div class="mb-3"><label>Email</label><input type="email" id="signEmail" placeholder="jane@novamed.ai"></div>
+      <div class="mb-3"><label>Password</label><input type="password" id="signPass" placeholder="••••••••"></div>
+      <label>Select Role</label>
+      <div class="role-selector">
+        <div class="role-btn" onclick="selectRole('admin',this)" data-role="admin"><span>🛡️</span>Admin</div>
+        <div class="role-btn" onclick="selectRole('doctor',this)" data-role="doctor"><span>🩺</span>Doctor</div>
+        <div class="role-btn" onclick="selectRole('student',this)" data-role="student"><span>🎓</span>Student</div>
+      </div>
+      <button class="btn btn-primary w-full mt-2" onclick="doSignup()" style="justify-content:center;padding:12px;font-size:15px;font-weight:600">✨ Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP SHELL ═══════════ -->
+<div id="appShell">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo"><span class="logo-icon">🏥</span><span class="grad-text">NovaMed AI</span></div>
+    
+    <div class="topbar-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="globalSearchInput" placeholder="Search patients or resources..." oninput="doGlobalSearch(this.value)" autocomplete="off">
+      <div class="search-dropdown hidden" id="searchDropdown"></div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="flex gap-2">
+        <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
+        <button class="lang-btn" onclick="setLang('hi',this)">हि</button>
+        <button class="lang-btn" onclick="setLang('te',this)">తె</button>
+      </div>
+      <div class="notif-bell" onclick="toggleNotifDropdown()" id="notifBell">
+        🔔<span class="notif-badge" id="notifBadge">3</span>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="userName">Admin</div>
+          <span class="role-badge" id="userRole">ADMIN</span>
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="doLogout()">⏏ Logout</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION DROPDOWN -->
+  <div class="notif-dropdown glass" id="notifDropdown"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="nav-item active" onclick="navigate('dashboard')" data-nav="dashboard"><span class="nav-icon">📊</span><span data-t="dashboard">Dashboard</span></div>
+    <div class="nav-item" onclick="navigate('resources')" data-nav="resources"><span class="nav-icon">🏥</span><span data-t="resources">Resources</span></div>
+    <div class="nav-item" onclick="navigate('requests')" data-nav="requests"><span class="nav-icon">📋</span><span id="navRequestsText" data-t="requests">Requests & Lab Booking</span><span class="nav-badge" id="reqBadge">2</span></div>
+    <div class="nav-item" onclick="navigate('queue')" data-nav="queue"><span class="nav-icon">⏳</span><span data-t="queue">Queue & Status</span></div>
+    <div class="nav-item" onclick="navigate('twin')" data-nav="twin"><span class="nav-icon">🗺️</span><span data-t="digitalTwin">Digital Twin</span></div>
+    <div class="nav-item admin-only" onclick="navigate('admin')" data-nav="admin"><span class="nav-icon">🛡️</span><span data-t="adminPanel">Admin Panel</span></div>
+    <div class="nav-item" onclick="navigate('analytics')" data-nav="analytics"><span class="nav-icon">📈</span><span data-t="analytics">Analytics</span></div>
+    <div class="nav-item" onclick="navigate('voice')" data-nav="voice"><span class="nav-icon">🎙️</span><span data-t="voiceBooking">Voice Booking</span></div>
+    <div class="nav-item" onclick="navigate('history')" data-nav="history"><span class="nav-icon">📜</span><span data-t="history">History</span></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="section active" id="sec-dashboard">
+      <h2 class="section-title grad-text" data-t="dashboard">Dashboard</h2>
+      <p class="section-subtitle">Real-time overview of system metrics <span class="status-dot dot-cyan"></span> Live</p>
+      <div class="grid grid-4 gap-4 mb-4" id="dashMetrics"></div>
+      <div class="grid grid-2 gap-4">
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.6s"><h3 class="grad-text mb-3 font-semibold" data-t="resources">Resource Utilization</h3><div class="chart-container"><canvas id="dashDonut"></canvas></div></div>
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.9s"><h3 class="grad-text mb-3 font-semibold">Hourly Demand</h3><div class="chart-container"><canvas id="dashLine"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ RESOURCES ═══ -->
+    <div class="section" id="sec-resources">
+      <div class="flex justify-between items-center mb-4">
+        <div><h2 class="section-title grad-text" data-t="resources">Resources</h2><p class="section-subtitle">Inventory Management <span class="status-dot dot-green"></span></p></div>
+        <button class="btn" onclick="exportResources()">📤 Export Report</button>
+      </div>
+      <div class="grid grid-5 gap-4" id="resourceGrid"></div>
+    </div>
+
+    <!-- ═══ REQUESTS ═══ -->
+    <div class="section" id="sec-requests">
+      <h2 class="section-title grad-text" data-t="requests">Smart Requests</h2>
+      <p class="section-subtitle">Submit resource allocation requests</p>
+      <div class="grid grid-2 gap-4">
+        <!-- Hospital Form -->
+        <div class="glass p-5 float-card hud-corners" style="animation-delay:0s" id="hospitalFormCard">
+          <h3 class="grad-text mb-3 font-semibold">🏥 Hospital Request</h3>
+          <div class="mb-3"><label>Patient Name</label><input id="hfName" placeholder="Patient name"></div>
+          <div class="grid grid-2 gap-2 mb-3">
+            <div><label>Age</label><input type="number" id="hfAge" placeholder="Age" min="0" max="150"></div>
+            <div><label>Blood Group</label><select id="hfBlood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+          </div>
+          <div class="mb-3">
+            <label>Condition</label>
+            <div class="flex gap-2 mt-2">
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--red)"><input type="radio" name="hfCond" value="Critical" checked> Critical</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--amber)"><input type="radio" name="hfCond" value="Moderate"> Moderate</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--green)"><input type="radio" name="hfCond" value="Mild"> Mild</label>
+            </div>
+          </div>
+          <div class="mb-3"><label>Required Resource</label><select id="hfResource"><option value="icuBeds">ICU Bed</option><option value="generalBeds">General Bed</option><option value="ventilators">Ventilator</option><option value="equipment">Equipment</option></select></div>
+          <div class="mb-3"><label>Ward / Room</label><input id="hfWard" placeholder="e.g., ICU-A3"></div>
+          <div class="mb-3"><label>Clinical Notes</label><textarea id="hfNotes" placeholder="Additional notes..."></textarea></div>
+          <button class="btn btn-primary w-full" onclick="submitHospitalRequest()" style="justify-content:center">📤 Submit Request</button>
+        </div>
+        <!-- College Form -->
+        <div class="glass p-5 float-card hud-corners" style="animation-delay:0.5s" id="collegeFormCard">
+          <h3 class="grad-text mb-3 font-semibold">🎓 College Lab Booking</h3>
+          <div class="mb-3"><label>Student Name</label><input id="cfName" placeholder="Student name"></div>
+          <div class="mb-3"><label>Department</label><select id="cfDept"><option>Biochemistry</option><option>Microbiology</option><option>Pathology</option><option>Pharmacology</option><option>Anatomy</option></select></div>
+          <div class="mb-3"><label>Lab Type</label><select id="cfLab"><option value="labs">Biochemistry Lab</option><option value="labs">Microbiology Lab</option><option value="labs">Pathology Lab</option><option value="labs">Pharmacology Lab</option><option value="labs">Anatomy Lab</option></select></div>
+          <div class="grid grid-2 gap-2 mb-3">
+            <div><label>Date</label><input type="date" id="cfDate"></div>
+            <div><label>Time Slot</label><select id="cfSlot"><option>09:00 - 11:00</option><option>11:00 - 13:00</option><option>14:00 - 16:00</option><option>16:00 - 18:00</option></select></div>
+          </div>
+          <div class="mb-3"><label>Duration</label><select id="cfDur"><option>1 Hour</option><option>2 Hours</option><option>3 Hours</option></select></div>
+          <div class="mb-3">
+            <label>Equipment Needed</label>
+            <div class="flex gap-3 mt-2" style="flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="checkbox" value="Microscope"> Microscope</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="checkbox" value="Centrifuge"> Centrifuge</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="checkbox" value="PCR"> PCR</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="checkbox" value="Spectrophotometer"> Spectrophotometer</label>
+            </div>
+          </div>
+          <div class="mb-3"><label>Purpose</label><textarea id="cfPurpose" placeholder="Experiment / Study purpose..."></textarea></div>
+          <button class="btn btn-primary w-full" onclick="submitCollegeRequest()" style="justify-content:center">📤 Book Lab</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ QUEUE & STATUS ═══ -->
+    <div class="section" id="sec-queue">
+      <h2 class="section-title grad-text" data-t="queue">Queue & Status <span style="font-size:14px;color:var(--red);vertical-align:middle;animation:blink 1.5s infinite">🔴 LIVE</span></h2>
+      <p class="section-subtitle">Real-time priority queue with transparent tracking</p>
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0s">
+        <div class="overflow-auto"><table class="data-table" id="queueTable"><thead><tr><th>#</th><th>Patient/User</th><th>Resource</th><th>Priority</th><th>Condition</th><th>Wait</th><th>ETA</th><th>Status</th><th>Actions</th></tr></thead><tbody id="queueBody"></tbody></table></div>
+      </div>
+      <div id="trackingPanel" class="glass p-4 float-card hud-corners" style="animation-delay:0.4s;display:none">
+        <h3 class="grad-text mb-3 font-semibold">🔍 Request Tracking</h3>
+        <div id="trackingContent"></div>
+      </div>
+    </div>
+
+    <!-- ═══ DIGITAL TWIN ═══ -->
+    <div class="section" id="sec-twin">
+      <h2 class="section-title grad-text" data-t="digitalTwin">Digital Twin</h2>
+      <p class="section-subtitle">Live hospital resource visualization <span class="status-dot dot-green"></span></p>
+      <div class="grid grid-2 gap-4 mb-4">
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0s">
+          <h3 class="grad-text mb-3 font-semibold">🛏 ICU Ward (24 Beds)</h3>
+          <div class="bed-grid" style="grid-template-columns:repeat(6,1fr)" id="icuGrid"></div>
+        </div>
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.3s">
+          <h3 class="grad-text mb-3 font-semibold">🫁 Ventilators (20 Units)</h3>
+          <div class="bed-grid" style="grid-template-columns:repeat(5,1fr)" id="ventGrid"></div>
+        </div>
+      </div>
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0.6s">
+        <h3 class="grad-text mb-3 font-semibold">🧪 Lab Rooms</h3>
+        <div class="grid grid-5 gap-3" id="labGrid"></div>
+      </div>
+      <div class="glass p-5 float-card hud-corners" style="animation-delay:0.9s">
+        <h3 class="grad-text mb-3 font-semibold">🗺️ Floor Map</h3>
+        <div class="floor-map" id="floorMap"></div>
+      </div>
+    </div>
+
+    <!-- ═══ ADMIN PANEL ═══ -->
+    <div class="section" id="sec-admin">
+      <h2 class="section-title grad-text" data-t="adminPanel">Admin Panel</h2>
+      <p class="section-subtitle">System administration & control center 🛡️</p>
+      <!-- System Controls -->
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0s">
+        <h3 class="grad-text mb-3 font-semibold">⚙️ System Controls</h3>
+        <div class="grid grid-3 gap-3" id="systemToggles"></div>
+      </div>
+      <!-- Resource Management -->
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0.3s">
+        <h3 class="grad-text mb-3 font-semibold">🏥 Resource Management</h3>
+        <div class="grid grid-3 gap-3 mb-3">
+          <div><label>Resource Type</label><select id="adminResType"><option value="icuBeds">ICU Beds</option><option value="generalBeds">General Beds</option><option value="ventilators">Ventilators</option><option value="labs">Labs</option><option value="equipment">Equipment</option></select></div>
+          <div><label>Quantity</label><input type="number" id="adminResQty" value="1" min="1" max="50"></div>
+          <div><label>Action</label>
+            <div class="flex gap-2 mt-2">
+              <button class="btn btn-success btn-sm" onclick="adminAddResource()">+ Add</button>
+              <button class="btn btn-danger btn-sm" onclick="adminRemoveResource()">- Remove</button>
+              <button class="btn btn-amber btn-sm" onclick="adminMaintenance()">🔧 Maint.</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- User Management -->
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0.6s">
+        <h3 class="grad-text mb-3 font-semibold">👥 User Management</h3>
+        <div class="overflow-auto"><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Institution</th><th>Status</th><th>Bookings</th><th>Last Active</th><th>Actions</th></tr></thead><tbody id="userMgmtBody"></tbody></table></div>
+      </div>
+      <!-- Live Requests -->
+      <div class="glass p-4 float-card hud-corners" style="animation-delay:0.9s">
+        <h3 class="grad-text mb-3 font-semibold">📋 Live Requests (Admin View)</h3>
+        <div class="overflow-auto"><table class="data-table"><thead><tr><th>#</th><th>User</th><th>Resource</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminReqBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ═══ ANALYTICS ═══ -->
+    <div class="section" id="sec-analytics">
+      <h2 class="section-title grad-text" data-t="analytics">Analytics & Reports</h2>
+      <p class="section-subtitle">Comprehensive system analytics</p>
+      <div class="grid grid-3 gap-4 mb-4" id="analyticsMetrics"></div>
+      <div class="grid grid-2 gap-4 mb-4">
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0s"><h3 class="grad-text mb-3 font-semibold text-sm">Monthly Usage %</h3><div class="chart-container"><canvas id="chartMonthly"></canvas></div></div>
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.3s"><h3 class="grad-text mb-3 font-semibold text-sm">Priority Breakdown</h3><div class="chart-container"><canvas id="chartPriority"></canvas></div></div>
+      </div>
+      <div class="grid grid-2 gap-4 mb-4">
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.6s"><h3 class="grad-text mb-3 font-semibold text-sm">Auto-Allocations (7 days)</h3><div class="chart-container"><canvas id="chartAutoAlloc"></canvas></div></div>
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:0.9s"><h3 class="grad-text mb-3 font-semibold text-sm">User Activity by Role</h3><div class="chart-container"><canvas id="chartUserAct"></canvas></div></div>
+      </div>
+      <div class="grid grid-2 gap-4 mb-4">
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:1.2s"><h3 class="grad-text mb-3 font-semibold text-sm">Conflicts Prevented (Weekly)</h3><div class="chart-container"><canvas id="chartConflicts"></canvas></div></div>
+        <div class="glass p-4 float-card hud-corners" style="animation-delay:1.5s"><h3 class="grad-text mb-3 font-semibold text-sm">Resource Utilization</h3><div class="chart-container"><canvas id="chartUtilDonut"></canvas></div></div>
+      </div>
+      <div class="text-center mt-4"><button class="btn btn-primary" onclick="generateReport()">📊 Generate Full Report</button></div>
+    </div>
+
+
+
+    <!-- ═══ VOICE BOOKING ═══ -->
+    <div class="section" id="sec-voice">
+      <h2 class="section-title grad-text" data-t="voiceBooking">Voice Booking</h2>
+      <p class="section-subtitle">AI-powered voice command interface</p>
+      <div class="glass p-5 float-card hud-corners text-center" style="animation-delay:0s;max-width:600px;margin:0 auto" id="voiceCard">
+        <div id="voiceDisabledMsg" class="hidden" style="color:var(--amber);font-size:16px;padding:40px">⚠️ Voice booking disabled by admin</div>
+        <div id="voiceContent">
+          <button class="mic-btn" id="micBtn" onclick="startVoice()" style="margin:0 auto 20px">🎙️</button>
+          <div id="voiceStatus" style="font-size:14px;color:var(--muted);margin-bottom:16px">Tap the mic to start voice command</div>
+          <div class="sound-wave hidden" id="soundWave">
+            <div class="sound-bar" style="animation-delay:0s"></div>
+            <div class="sound-bar" style="animation-delay:0.1s"></div>
+            <div class="sound-bar" style="animation-delay:0.2s"></div>
+            <div class="sound-bar" style="animation-delay:0.3s"></div>
+            <div class="sound-bar" style="animation-delay:0.4s"></div>
+          </div>
+          <div id="voiceResult" class="mb-3" style="font-size:16px;min-height:30px"></div>
+          <div class="mb-4" style="margin-top:16px">
+            <p class="text-xs mb-2" style="color:var(--muted)">Supported commands:</p>
+            <div id="voiceChips"></div>
+          </div>
+          <div class="mt-4">
+            <p class="text-xs mb-2" style="color:var(--muted)">Recent commands:</p>
+            <div id="voiceHistory" style="font-size:12px;color:var(--muted)">No commands yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ HISTORY ═══ -->
+    <div class="section" id="sec-history">
+      <h2 class="section-title grad-text" data-t="history">Allocation History</h2>
+      <p class="section-subtitle">Complete audit trail of all allocations</p>
+      <div class="glass p-4 float-card hud-corners mb-4" style="animation-delay:0s">
+        <div class="flex gap-3 mb-3" style="flex-wrap:wrap">
+          <select id="histFilter" onchange="renderHistory()" style="width:auto"><option value="">All Statuses</option><option value="Allocated">Allocated</option><option value="Auto-Allocated">Auto-Allocated</option><option value="Pending">Pending</option><option value="Rejected">Rejected</option></select>
+          <select id="histResFilter" onchange="renderHistory()" style="width:auto"><option value="">All Resources</option><option value="icuBeds">ICU Beds</option><option value="generalBeds">General Beds</option><option value="ventilators">Ventilators</option><option value="labs">Labs</option><option value="equipment">Equipment</option></select>
+        </div>
+        <div class="overflow-auto"><table class="data-table"><thead><tr><th>Timestamp</th><th>User/Patient</th><th>Resource</th><th>Action</th><th>Priority</th><th>Wait</th><th>Method</th><th>Status</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+      </div>
+    </div>
+
+  </div><!-- end main-content -->
+</div><!-- end appShell -->
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal glass hud-corners" id="modalContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 🌌 DATA & STATE
+// ═══════════════════════════════════════
+let currentUser = JSON.parse(localStorage.getItem('nova_currentUser')) || null;
+let currentLang = 'en';
+let activeSection = 'dashboard';
+let selectedRole = null;
+let requestIdCounter = 1000;
+let autoAllocCount = 142;
+let conflictsPrevented = 37;
+let unreadNotifs = 3;
+let chartsInitialized = false;
+let chartInstances = {};
+
+let usersDB = JSON.parse(localStorage.getItem('nova_usersDB')) || [];
+
+const resources = {
+  icuBeds:     { total:24, available:6, occupied:18, icon:'🛏️', name:'ICU Beds', label:'icuBeds', avgDuration:4 },
+  generalBeds: { total:120, available:54, occupied:66, icon:'🏥', name:'General Beds', label:'generalBeds', avgDuration:8 },
+  ventilators: { total:20, available:2, occupied:18, icon:'🫁', name:'Ventilators', label:'ventilators', avgDuration:6 },
+  labs:        { total:25, available:15, occupied:10, icon:'🧪', name:'Labs', label:'labs', avgDuration:2 },
+  equipment:   { total:78, available:29, occupied:49, icon:'⚙️', name:'Equipment', label:'equipment', avgDuration:3 }
+};
+
+let allRequests = [];
+let waitlist = [];
+let allocationHistory = [];
+let notifications = [
+  { icon:'🚨', text:'Emergency ICU allocation completed', time:'2 min ago', read:false },
+  { icon:'✅', text:'Lab booking confirmed for Dr. Smith', time:'15 min ago', read:false },
+  { icon:'📊', text:'ICU capacity alert: 75% occupied', time:'1 hr ago', read:false }
+];
+let labBookings = [];
+let voiceCommandHistory = [];
+
+const studentBookingCounts = {};
+
+const systemToggles = {
+  autoReallocation: true,
+  antiStarvation: true,
+  conflictDetection: true,
+  voiceBooking: true,
+  maintenanceMode: false,
+};
+
+const demoUsers = [
+  { name:'Dr. Sarah Chen', role:'doctor', institution:'NovaMed Hospital', status:'Active', bookings:12, lastActive:'2 min ago' },
+  { name:'Dr. Raj Patel', role:'doctor', institution:'NovaMed Hospital', status:'Active', bookings:8, lastActive:'1 hr ago' },
+  { name:'Admin Kumar', role:'admin', institution:'NovaMed Hospital', status:'Active', bookings:3, lastActive:'Just now' },
+  { name:'Priya Sharma', role:'student', institution:'NovaMed Medical College', status:'Active', bookings:5, lastActive:'3 hrs ago' },
+  { name:'Anil Reddy', role:'student', institution:'NovaMed Medical College', status:'Active', bookings:2, lastActive:'Today' },
+  { name:'Dr. Lisa Wong', role:'doctor', institution:'City Hospital', status:'Suspended', bookings:0, lastActive:'5 days ago' }
+];
+
+const translations = {
+  en: { dashboard:'Dashboard', resources:'Resources', requests:'Requests', queue:'Queue & Status', digitalTwin:'Digital Twin', adminPanel:'Admin Panel', analytics:'Analytics', alerts:'Alerts', voiceBooking:'Voice Booking', history:'History' },
+  hi: { dashboard:'डैशबोर्ड', resources:'संसाधन', requests:'अनुरोध', queue:'कतार और स्थिति', digitalTwin:'डिजिटल ट्विन', adminPanel:'व्यवस्थापक पैनल', analytics:'विश्लेषण', alerts:'अलर्ट', voiceBooking:'वॉइस बुकिंग', history:'इतिहास' },
+  te: { dashboard:'డాష్‌బోర్డ్', resources:'వనరులు', requests:'అభ్యర్థనలు', queue:'క్యూ & స్థితి', digitalTwin:'డిజిటల్ ట్విన్', adminPanel:'అడ్మిన్ ప్యానల్', analytics:'విశ్లేషణలు', alerts:'అలర్ట్‌లు', voiceBooking:'వాయిస్ బుకింగ్', history:'చరిత్ర' }
+};
+
+const voiceCommands = [
+  "Book ICU bed",
+  "Reserve Biochemistry Lab for tomorrow 10am",
+  "Check ventilator availability",
+  "What is my queue position",
+  "Cancel my booking",
+  "Show available resources"
+];
+
+const resourceNames = { icuBeds:'ICU Bed', generalBeds:'General Bed', ventilators:'Ventilator', labs:'Lab', equipment:'Equipment' };
+
+// ═══════════════════════════════════════
+// 🎨 PARTICLES
+// ═══════════════════════════════════════
+function createParticles(){
+  const colors = ['#00f5ff','#4f8ef7','#a855f7','#ec4899'];
+  for(let i=0;i<50;i++){
+    const p = document.createElement('div');
+    p.className='particle';
+    const size = 2 + Math.random()*3;
+    const x = Math.random()*100;
+    const dur = 8 + Math.random()*8;
+    const delay = Math.random()*10;
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    p.style.cssText=`width:${size}px;height:${size}px;left:${x}vw;bottom:-10px;background:${color};animation:particleUp ${dur}s ${delay}s linear infinite;opacity:0;`;
+    document.body.appendChild(p);
+  }
+}
+
+// ═══════════════════════════════════════
+// 🔐 AUTH
+// ═══════════════════════════════════════
+function switchAuthTab(tab){
+  document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
+  document.getElementById('signupForm').style.display = tab==='signup'?'block':'none';
+  document.getElementById('loginTab').classList.toggle('active', tab==='login');
+  document.getElementById('signupTab').classList.toggle('active', tab==='signup');
+}
+
+function selectRole(role, el){
+  selectedRole = role;
+  el.parentElement.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  
+  if(!email || !pass) { showToast('error', 'Login Failed', 'Please enter your email and password'); return; }
+  if(!selectedRole) { showToast('error', 'Login Failed', 'Please select a role to login'); return; }
+
+  const foundUser = usersDB.find(u => u.email === email);
+  if(!foundUser) { showToast('error', 'Login Failed', 'Account not found. Please sign up first.'); return; }
+  if(foundUser.pass !== pass) { showToast('error', 'Login Failed', 'Incorrect password'); return; }
+  if(foundUser.role !== selectedRole) { showToast('error', 'Login Failed', `Use the ${foundUser.role} tab to login.`); return; }
+
+  currentUser = foundUser;
+  localStorage.setItem('nova_currentUser', JSON.stringify(currentUser));
+  enterApp();
+}
+
+function doSignup(){
+  const first = document.getElementById('signFirst').value || 'Jane';
+  const last = document.getElementById('signLast').value || 'Doe';
+  const inst = document.getElementById('signInst').value || 'NovaMed Hospital';
+  const email = document.getElementById('signEmail').value.trim();
+  const pass = document.getElementById('signPass').value;
+  
+  if(!email || !pass) { showToast('error', 'Signup Failed', 'Please provide an email and password'); return; }
+  if(!selectedRole) { showToast('error', 'Signup Failed', 'Please select a role'); return; }
+
+  if(usersDB.find(u => u.email === email)) { showToast('error', 'Signup Failed', 'Email already registered'); return; }
+
+  currentUser = { email, pass, role:selectedRole, name:`${first} ${last}`, institution:inst };
+  usersDB.push(currentUser);
+  localStorage.setItem('nova_usersDB', JSON.stringify(usersDB));
+  localStorage.setItem('nova_currentUser', JSON.stringify(currentUser));
+  showToast('success', 'Account Created', 'Successfully registered your account!');
+  enterApp();
+}
+
+function enterApp(){
+  const auth = document.getElementById('authScreen');
+  auth.classList.add('hiding');
+  setTimeout(()=>{
+    auth.style.display='none';
+    const shell = document.getElementById('appShell');
+    shell.classList.add('visible');
+    document.getElementById('userName').textContent = currentUser.name;
+    document.getElementById('userRole').textContent = currentUser.role.toUpperCase();
+    document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+    // Role-based visibility
+    document.querySelectorAll('.admin-only').forEach(el=>{
+      el.style.display = currentUser.role==='admin'?'':'none';
+    });
+    
+    const queueNav = document.querySelector('[data-nav="queue"]');
+    if (queueNav) queueNav.style.display = currentUser.role==='student'?'none':'';
+
+    document.getElementById('hospitalFormCard').style.display='';
+    document.getElementById('collegeFormCard').style.display='';
+    document.getElementById('navRequestsText').textContent='Requests & Lab Booking';
+
+    if(currentUser.role==='student'){
+      document.getElementById('hospitalFormCard').style.display='none';
+      document.getElementById('navRequestsText').textContent='Book Lab';
+      // Make college form take full width by hiding the grid class dynamically if needed, 
+      // but easiest is just let it sit in the cell. If we want it centered we can adjust parent style.
+      document.getElementById('collegeFormCard').parentElement.style.display='block'; 
+    }
+    if(currentUser.role==='doctor'){
+      document.getElementById('collegeFormCard').style.display='none';
+      document.getElementById('navRequestsText').textContent='Requests';
+      document.getElementById('hospitalFormCard').parentElement.style.display='block';
+    }
+    initDashboard();
+    showToast('success','Welcome!',`Logged in as ${currentUser.name} (${currentUser.role})`);
+  },600);
+}
+
+function doLogout(){
+  currentUser=null;
+  localStorage.removeItem('nova_currentUser');
+  document.getElementById('appShell').classList.remove('visible');
+  const auth=document.getElementById('authScreen');
+  auth.style.display='flex';
+  auth.classList.remove('hiding');
+  // Destroy chart instances
+  Object.values(chartInstances).forEach(c=>{try{c.destroy()}catch(e){}});
+  chartInstances={};
+  chartsInitialized=false;
+  showToast('info','Logged Out','Session ended successfully');
+}
+
+// ═══════════════════════════════════════
+// 🗺️ NAVIGATION
+// ═══════════════════════════════════════
+function navigate(section){
+  activeSection=section;
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+section).classList.add('active');
+  document.querySelector(`[data-nav="${section}"]`)?.classList.add('active');
+  if(section==='resources') renderResources();
+  if(section==='queue') renderQueue();
+  if(section==='twin') renderDigitalTwin();
+  if(section==='admin') renderAdmin();
+  if(section==='analytics') renderAnalytics();
+  if(section==='alerts') renderAlerts();
+  if(section==='voice') renderVoice();
+  if(section==='history') renderHistory();
+  if(section==='dashboard') renderDashboardMetrics();
+}
+
+// ═══════════════════════════════════════
+// 🌐 LANGUAGE
+// ═══════════════════════════════════════
+function setLang(lang, el){
+  currentLang=lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const key=el.getAttribute('data-t');
+    if(translations[lang]&&translations[lang][key]) el.textContent=translations[lang][key];
+  });
+  const langNames={en:'English',hi:'Hindi',te:'Telugu'};
+  showToast('info','Language',`Language set to ${langNames[lang]}`);
+}
+
+// ═══════════════════════════════════════
+// 🔔 TOASTS
+// ═══════════════════════════════════════
+const toastQueue=[];
+function showToast(type,title,body){
+  const container=document.getElementById('toastContainer');
+  if(container.children.length>=4){toastQueue.push({type,title,body});return;}
+  const icons={success:'✅',info:'ℹ️',warning:'⚠️',error:'❌'};
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.innerHTML=`<div>${icons[type]||'ℹ️'}</div><div><div class="toast-title">${title}</div><div class="toast-body">${body}</div></div><button class="toast-close" onclick="dismissToast(this.parentElement)">&times;</button>`;
+  container.appendChild(t);
+  setTimeout(()=>dismissToast(t),4000);
+}
+function dismissToast(t){
+  if(!t||!t.parentElement)return;
+  t.classList.add('removing');
+  setTimeout(()=>{t.remove();if(toastQueue.length){const q=toastQueue.shift();showToast(q.type,q.title,q.body);}},300);
+}
+
+// ═══════════════════════════════════════
+// 🔔 NOTIFICATIONS
+// ═══════════════════════════════════════
+function addNotification(icon,text,roleTarget=null){
+  notifications.unshift({icon,text,time:'Just now',read:false,target:roleTarget});
+  if(notifications.length>20) notifications.pop();
+  
+  if(!roleTarget || roleTarget === currentUser?.role || currentUser?.role === 'admin') {
+      unreadNotifs++;
+      updateNotifBadge();
+  }
+}
+function updateNotifBadge(){
+  document.getElementById('notifBadge').textContent=unreadNotifs;
+  document.getElementById('notifBadge').style.display=unreadNotifs>0?'flex':'none';
+}
+function toggleNotifDropdown(){
+  const dd=document.getElementById('notifDropdown');
+  dd.classList.toggle('show');
+  if(dd.classList.contains('show')){
+    const visibleNotifs = notifications.filter(n => !n.target || n.target === currentUser?.role || currentUser?.role === 'admin');
+    dd.innerHTML=visibleNotifs.slice(0,5).map(n=>`<div class="notif-item"><span class="ni-icon">${n.icon}</span><div class="ni-text">${n.text}</div><span class="ni-time">${n.time}</span></div>`).join('');
+    if(visibleNotifs.length===0) dd.innerHTML='<div class="p-3 text-center text-xs text-muted">No notifications</div>';
+    unreadNotifs=0;updateNotifBadge();
+  }
+}
+
+// ═══════════════════════════════════════
+// 📊 DASHBOARD
+// ═══════════════════════════════════════
+function initDashboard(){
+  renderDashboardMetrics();
+  renderResources();
+  setTimeout(()=>initDashboardCharts(),200);
+  renderDigitalTwin();
+  renderAdmin();
+  renderVoice();
+}
+
+function renderDashboardMetrics(){
+  const totalCap=Object.values(resources).reduce((a,r)=>a+r.total,0);
+  const totalOcc=Object.values(resources).reduce((a,r)=>a+r.occupied,0);
+  const util=Math.round(totalOcc/totalCap*100);
+  const metrics=[
+    {label:'Total Utilization',value:util+'%',icon:'📊',color:'var(--cyan)'},
+    {label:'Conflicts Prevented',value:conflictsPrevented,icon:'🚫',color:'var(--green)'},
+    {label:'Auto-Allocations',value:autoAllocCount,icon:'🤖',color:'var(--purple)'},
+    {label:'Avg Wait Time',value:'~18 min',icon:'⏱️',color:'var(--amber)'},
+    {label:'Peak Demand Hour',value:'10 AM',icon:'📈',color:'var(--pink)'},
+    {label:'System Uptime',value:'99.7%',icon:'🟢',color:'var(--green)'},
+    {label:'Active Requests',value:allRequests.filter(r=>r.status!=='completed').length,icon:'📋',color:'var(--blue)'},
+    {label:'Waitlisted',value:waitlist.length,icon:'⏳',color:'var(--red)'}
+  ];
+  const c=document.getElementById('dashMetrics');
+  c.innerHTML=metrics.map((m,i)=>`<div class="glass p-4 float-card" style="animation-delay:${i*0.15}s;text-align:center"><div style="font-size:28px;margin-bottom:6px">${m.icon}</div><div class="text-xs" style="color:var(--muted)">${m.label}</div><div style="font-size:24px;font-weight:800;color:${m.color}" class="counter" data-target="${typeof m.value==='number'?m.value:0}">${m.value}</div></div>`).join('');
+  animateCounters();
+}
+
+function animateCounters(){
+  document.querySelectorAll('.counter[data-target]').forEach(el=>{
+    const target=parseInt(el.dataset.target);
+    if(isNaN(target))return;
+    let current=0;
+    const step=Math.max(1,Math.floor(target/30));
+    const interval=setInterval(()=>{
+      current+=step;
+      if(current>=target){current=target;clearInterval(interval);}
+      el.textContent=current+(el.textContent.includes('%')?'%':'');
+    },30);
+  });
+}
+
+function initDashboardCharts(){
+  if(chartsInitialized)return;
+  chartsInitialized=true;
+  const commonOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{family:'Inter',size:11}}}}};
+  // Doughnut
+  const dCtx=document.getElementById('dashDonut');
+  if(dCtx){
+    chartInstances.dashDonut=new Chart(dCtx,{type:'doughnut',data:{labels:Object.values(resources).map(r=>r.name),datasets:[{data:Object.values(resources).map(r=>r.occupied),backgroundColor:['#ef4444','#f59e0b','#a855f7','#10b981','#4f8ef7'],borderWidth:0}]},options:{...commonOpts,cutout:'65%'}});
+  }
+  // Line
+  const lCtx=document.getElementById('dashLine');
+  if(lCtx){
+    const hours=['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM'];
+    chartInstances.dashLine=new Chart(lCtx,{type:'line',data:{labels:hours,datasets:[{label:'Demand',data:[5,12,25,42,65,78,72,58,45,52,60,55,48,38,30,18,8],borderColor:'#00f5ff',backgroundColor:'rgba(0,245,255,0.1)',fill:true,tension:0.4,pointRadius:2}]},options:{...commonOpts,scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(100,116,139,0.1)'}},y:{ticks:{color:'#64748b'},grid:{color:'rgba(100,116,139,0.1)'}}}}});
+  }
+}
+
+// ═══════════════════════════════════════
+// 🏥 RESOURCES
+// ═══════════════════════════════════════
+function renderResources(){
+  const g=document.getElementById('resourceGrid');
+  g.innerHTML='';
+  let i=0;
+  for(const[key,r]of Object.entries(resources)){
+    // filter logic
+    if (currentUser && currentUser.role === 'student' && key !== 'labs') continue;
+
+    const pct=Math.round(r.occupied/r.total*100);
+    const color=pct<60?'var(--green)':pct<80?'var(--amber)':'var(--red)';
+    const status=pct<60?'Available':pct<80?'Moderate':pct<90?'High Demand':'Critical';
+    const badgeClass=pct<60?'badge-available':pct<80?'badge-moderate':pct<90?'badge-high':'badge-critical';
+    const adminBtns=currentUser&&currentUser.role==='admin'?`<div class="flex gap-2 mt-2"><button class="btn btn-success btn-sm" onclick="addResourceUnit('${key}')">+ Add</button><button class="btn btn-danger btn-sm" onclick="removeResourceUnit('${key}')">- Remove</button></div>`:'';
+    g.innerHTML+=`<div class="glass resource-card float-card hud-corners" style="animation-delay:${i*0.3}s"><div class="rc-icon">${r.icon}</div><div class="rc-name">${r.name}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="rc-stats"><div>Total<span class="rc-stat-val">${r.total}</span></div><div>Available<span class="rc-stat-val" style="color:var(--green)">${r.available}</span></div><div>Occupied<span class="rc-stat-val" style="color:var(--red)">${r.occupied}</span></div></div><span class="status-badge ${badgeClass}">${status}</span>${adminBtns}</div>`;
+    i++;
+  }
+}
+
+function addResourceUnit(key){
+  resources[key].total++;resources[key].available++;
+  renderResources();renderDashboardMetrics();
+  showToast('success','Resource Added',`1 ${resources[key].name} unit added`);
+}
+function removeResourceUnit(key){
+  if(resources[key].available<=0){showToast('error','Cannot Remove','No available units to remove');return;}
+  resources[key].total--;resources[key].available--;
+  renderResources();renderDashboardMetrics();
+  showToast('warning','Resource Removed',`1 ${resources[key].name} unit removed`);
+}
+
+function exportResources(){
+  let report='═══ NOVAMED AI RESOURCE REPORT ═══\nGenerated: '+new Date().toLocaleString()+'\n\n';
+  for(const[k,r]of Object.entries(resources)){
+    const pct=Math.round(r.occupied/r.total*100);
+    report+=`${r.name}: ${r.occupied}/${r.total} occupied (${pct}%) | Available: ${r.available}\n`;
+  }
+  report+='\n═══ END REPORT ═══';
+  showModal('📤 Resource Export Report',`<pre style="white-space:pre-wrap;font-size:13px;color:var(--text);background:rgba(0,0,0,0.3);padding:16px;border-radius:8px">${report}</pre><button class="btn btn-primary mt-4" onclick="navigator.clipboard.writeText(\`${report.replace(/`/g,"'")}\`);showToast('success','Copied','Report copied to clipboard')">📋 Copy to Clipboard</button>`);
+}
+
+// ═══════════════════════════════════════
+// 📋 REQUESTS
+// ═══════════════════════════════════════
+function submitHospitalRequest(){
+  const name=document.getElementById('hfName').value;
+  const age=document.getElementById('hfAge').value;
+  const blood=document.getElementById('hfBlood').value;
+  const cond=document.querySelector('input[name="hfCond"]:checked').value;
+  const res=document.getElementById('hfResource').value;
+  const ward=document.getElementById('hfWard').value;
+  const notes=document.getElementById('hfNotes').value;
+  if(!name||!age){showToast('error','Validation Error','Please fill patient name and age');return;}
+  const req={id:++requestIdCounter,name,age:parseInt(age),blood,condition:cond,resource:res,ward,notes,timestamp:Date.now(),status:'pending',waitTime:0,queuePosition:null,type:'hospital',priorityScore:0,method:'Manual',events:[{time:Date.now(),text:'Request submitted'}],stage:0};
+  req.priorityScore=calcPriority(req);
+  allRequests.push(req);
+  allocateResource(req);
+  // Clear form
+  document.getElementById('hfName').value='';document.getElementById('hfAge').value='';
+  document.getElementById('hfWard').value='';document.getElementById('hfNotes').value='';
+  updateReqBadge();
+}
+
+function submitCollegeRequest(){
+  const name=document.getElementById('cfName').value;
+  const dept=document.getElementById('cfDept').value;
+  const lab=document.getElementById('cfLab').value;
+  const date=document.getElementById('cfDate').value;
+  const slot=document.getElementById('cfSlot').value;
+  const dur=document.getElementById('cfDur').value;
+  const equip=Array.from(document.querySelectorAll('#collegeFormCard input[type="checkbox"]:checked')).map(c=>c.value);
+  const purpose=document.getElementById('cfPurpose').value;
+  if(!name||!date){showToast('error','Validation Error','Please fill student name and date');return;}
+  const req={id:++requestIdCounter,name,dept,resource:'labs',lab,date,slot,duration:dur,equipment:equip,purpose,timestamp:Date.now(),status:'pending',waitTime:0,queuePosition:null,type:'college',condition:'Student',priorityScore:0,method:'Manual',events:[{time:Date.now(),text:'Lab booking submitted'}],stage:0};
+  // Conflict detection
+  if(systemToggles.conflictDetection && detectConflict(req)){return;}
+  // Fairness scoring
+  if(!studentBookingCounts[name]) studentBookingCounts[name]=0;
+  req.priorityScore=20-studentBookingCounts[name]*2;
+  if(req.priorityScore<5) req.priorityScore=5;
+  studentBookingCounts[name]++;
+  allRequests.push(req);
+  labBookings.push({resource:lab,date,slot,name,id:req.id});
+  allocateResource(req);
+  document.getElementById('cfName').value='';document.getElementById('cfPurpose').value='';
+  updateReqBadge();
+}
+
+function updateReqBadge(){
+  const pending=allRequests.filter(r=>r.status==='pending'||r.status==='queued').length;
+  document.getElementById('reqBadge').textContent=pending;
+}
+
+// ═══════════════════════════════════════
+// ⚡ PRIORITY ENGINE
+// ═══════════════════════════════════════
+function calcPriority(req){
+  let score=0;
+  if(req.condition==='Critical') score=100;
+  else if(req.condition==='Moderate') score=60;
+  else if(req.condition==='Mild') score=30;
+  else score=20; // Student
+  // Anti-starvation
+  score += Math.floor(req.waitTime/5)*5;
+  return score;
+}
+
+function allocateResource(req){
+  const res=resources[req.resource];
+  if(!res){showToast('error','Error','Unknown resource type');return;}
+  req.priorityScore=calcPriority(req);
+  if(res.available>0){
+    res.available--;res.occupied++;
+    req.status='allocated';req.stage=2;
+    req.events.push({time:Date.now(),text:`Allocated: ${res.name} assigned`});
+    addToHistory(req,'Allocated');
+    showToast('success','Allocated!',`${res.name} assigned to ${req.name}`);
+    addNotification('✅',`${res.name} allocated to ${req.name}`);
+    renderResources();renderDashboardMetrics();
+  } else {
+    req.status='queued';req.stage=1;
+    waitlist.push(req);
+    sortWaitlist();
+    req.queuePosition=waitlist.indexOf(req)+1;
+    const eta=calcETA(req);
+    req.events.push({time:Date.now(),text:`Queued: Position #${req.queuePosition}, ETA ${eta}`});
+    showToast('warning','Queued',`No ${res.name} available. Position #${req.queuePosition}. ETA: ${eta}`);
+    addNotification('⏰',`${req.name} queued for ${res.name} — Position #${req.queuePosition}`);
+  }
+  renderQueue();
+}
+
+function calcETA(req){
+  const res=resources[req.resource];
+  if(!res) return '~Unknown';
+  const pos=waitlist.indexOf(req)+1;
+  const etaHours=(res.avgDuration*pos)/Math.max(res.occupied,1);
+  if(etaHours<1) return `~${Math.round(etaHours*60)} min`;
+  return `~${Math.round(etaHours)} hours`;
+}
+
+function sortWaitlist(){
+  waitlist.sort((a,b)=>{
+    if(b.priorityScore!==a.priorityScore) return b.priorityScore-a.priorityScore;
+    return a.timestamp-b.timestamp;
+  });
+  waitlist.forEach((w,i)=>w.queuePosition=i+1);
+}
+
+// ═══════════════════════════════════════
+// 🚫 CONFLICT DETECTION
+// ═══════════════════════════════════════
+function detectConflict(req){
+  if(req.type!=='college') return false;
+  for(const booking of labBookings){
+    if(booking.date===req.date && booking.slot===req.slot && booking.resource===req.lab){
+      conflictsPrevented++;
+      showToast('error','Conflict Detected',`⚠️ ${req.lab} already booked by ${booking.name} at ${booking.slot}`);
+      addNotification('⚠️',`Conflict: ${req.lab} at ${booking.slot} already booked`);
+      // Suggest alternative
+      const slots=['09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00'];
+      const bookedSlots=labBookings.filter(b=>b.date===req.date&&b.resource===req.lab).map(b=>b.slot);
+      const altSlot=slots.find(s=>!bookedSlots.includes(s));
+      if(altSlot){
+        showModal('🚫 Booking Conflict',`<p style="color:var(--red);margin-bottom:12px">⚠️ ${req.lab} is already booked by <strong>${booking.name}</strong> at <strong>${booking.slot}</strong></p><p style="color:var(--green);margin-bottom:16px">✅ Suggested alternative: <strong>${altSlot}</strong></p><div class="flex gap-2"><button class="btn btn-success" onclick="document.getElementById('cfSlot').value='${altSlot}';closeModal();showToast('info','Slot Changed','Alternative slot selected: ${altSlot}')">Accept Alternative</button><button class="btn btn-amber" onclick="closeModal();showToast('info','Waitlisted','Added to lab waitlist')">Join Waitlist</button>${currentUser&&currentUser.role==='admin'?`<button class="btn btn-danger" onclick="closeModal();forceSubmitCollege()">Override (Admin)</button>`:''}</div>`);
+      }
+      return true;
+    }
+  }
+  // Capacity check
+  if(resources[req.resource]&&resources[req.resource].available<=0){
+    showToast('warning','At Capacity',`${resources[req.resource].name} at full capacity. Added to waitlist.`);
+    return false; // Don't block, just warn — allocateResource will queue it
+  }
+  return false;
+}
+
+function forceSubmitCollege(){
+  const name=document.getElementById('cfName').value||'Admin Override';
+  const req={id:++requestIdCounter,name,resource:'labs',condition:'Student',timestamp:Date.now(),status:'allocated',waitTime:0,priorityScore:100,type:'college',method:'Override',events:[{time:Date.now(),text:'Admin override — force allocated'}],stage:2};
+  allRequests.push(req);
+  addToHistory(req,'Force-Allocated');
+  showToast('warning','Admin Override','Lab force-allocated by admin');
+}
+
+// ═══════════════════════════════════════
+// ⏳ QUEUE DISPLAY
+// ═══════════════════════════════════════
+function renderQueue(){
+  const body=document.getElementById('queueBody');
+  const active=allRequests.filter(r=>r.status!=='completed'&&r.status!=='rejected');
+  active.sort((a,b)=>b.priorityScore-a.priorityScore);
+  body.innerHTML=active.map((r,i)=>{
+    const condClass=r.condition==='Critical'?'condition-critical':r.condition==='Moderate'?'condition-moderate':'condition-mild';
+    const eta=r.status==='queued'?calcETA(r):'-';
+    const statusColor=r.status==='allocated'?'var(--green)':r.status==='queued'?'var(--amber)':'var(--blue)';
+    return `<tr class="queue-row" id="qrow-${r.id}"><td>${i+1}</td><td><strong>${r.name}</strong><br><span class="text-xs" style="color:var(--muted)">${r.type}</span></td><td>${resourceNames[r.resource]||r.resource}</td><td><span style="color:var(--cyan);font-weight:700">${r.priorityScore}</span></td><td class="${condClass}">${r.condition}</td><td><span class="live-wait-time" data-ts="${r.timestamp}">00m 00s</span></td><td>${eta}</td><td><span style="color:${statusColor}">${r.status}</span></td><td><button class="btn btn-sm" onclick="showTracking(${r.id})">🔍</button>${currentUser&&currentUser.role==='admin'?` <button class="btn btn-sm btn-success" onclick="forceAssign(${r.id})">⚡</button> <button class="btn btn-sm btn-danger" onclick="rejectRequest(${r.id})">✕ Reject</button> <button class="btn btn-sm" onclick="targetEmergencyOverride(${r.id})">🚨</button>`:''}</td></tr>`;
+  }).join('');
+  // Also update admin panel
+  renderAdminRequests();
+}
+
+function showTracking(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  const panel=document.getElementById('trackingPanel');
+  panel.style.display='block';
+  const stages=['Submitted','Processing','Allocated','Active'];
+  const stagesHtml=stages.map((s,i)=>`<div class="step ${i<req.stage?'completed':''} ${i===req.stage?'active':''}"><div class="step-dot">${i<req.stage?'✓':i===req.stage?'◉':'○'}</div><div class="step-label">${s}</div>${i<3?'<div class="step-line"></div>':''}</div>`).join('');
+  const ahead=waitlist.filter(w=>w.priorityScore>req.priorityScore).length;
+  const condBreak=req.condition==='Critical'?100:req.condition==='Moderate'?60:req.condition==='Mild'?30:20;
+  const waitBonus=Math.floor(req.waitTime/5)*5;
+  document.getElementById('trackingContent').innerHTML=`
+    <div class="status-step mb-4" style="display:flex">${stagesHtml}</div>
+    <div class="grid grid-2 gap-3">
+      <div class="glass p-3"><span class="text-xs" style="color:var(--muted)">Queue Position</span><div style="font-size:20px;font-weight:700;color:var(--cyan)">You are #${req.queuePosition||'-'} in queue</div></div>
+      <div class="glass p-3"><span class="text-xs" style="color:var(--muted)">Priority Score</span><div style="font-size:20px;font-weight:700;color:var(--purple)">${req.priorityScore} pts</div><div class="text-xs" style="color:var(--muted)">Condition: ${condBreak}pts + Wait: ${waitBonus}pts</div></div>
+      <div class="glass p-3"><span class="text-xs" style="color:var(--muted)">ETA</span><div style="font-size:20px;font-weight:700;color:var(--amber)">${req.status==='queued'?calcETA(req):'Allocated'}</div></div>
+      <div class="glass p-3"><span class="text-xs" style="color:var(--muted)">Ahead of You</span><div style="font-size:16px;font-weight:600;color:var(--text)">${ahead>0?`${ahead} patients with higher priority`:'You are next!'}</div></div>
+    </div>
+    <div class="mt-4"><h4 class="text-sm font-semibold mb-2" style="color:var(--muted)">Event Log</h4>${req.events.map(e=>`<div class="text-xs mb-2"><span style="color:var(--cyan)">[${new Date(e.time).toLocaleTimeString()}]</span> ${e.text}</div>`).join('')}</div>`;
+}
+
+function forceAssign(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  const res=resources[req.resource];
+  if(res.available>0){res.available--;res.occupied++;}
+  req.status='allocated';req.stage=2;
+  req.events.push({time:Date.now(),text:'Force-assigned by admin'});
+  const idx=waitlist.indexOf(req);if(idx>-1)waitlist.splice(idx,1);
+  addToHistory(req,'Force-Allocated');
+  renderQueue();renderResources();renderDashboardMetrics();
+  showToast('success','Force Assigned',`${resourceNames[req.resource]} force-assigned to ${req.name}`);
+}
+
+function rejectRequest(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  req.status='rejected';req.stage=-1;
+  req.events.push({time:Date.now(),text:'Rejected by admin'});
+  const idx=waitlist.indexOf(req);if(idx>-1)waitlist.splice(idx,1);
+  addToHistory(req,'Rejected');
+  renderQueue();
+  showToast('error','Request Rejected',`${req.name}'s request has been rejected`);
+  addNotification('❌',`Request from ${req.name} rejected`);
+}
+
+// ═══════════════════════════════════════
+// 📜 HISTORY
+// ═══════════════════════════════════════
+function addToHistory(req,action){
+  allocationHistory.unshift({
+    timestamp:Date.now(),name:req.name,resource:req.resource,action,
+    priority:req.priorityScore,wait:req.waitTime+'m',method:req.method||'Manual',status:action
+  });
+}
+
+function renderHistory(){
+  const filterStatus=document.getElementById('histFilter').value;
+  const filterRes=document.getElementById('histResFilter').value;
+  let data=[...allocationHistory];
+  
+  if(currentUser && currentUser.role !== 'admin') {
+      data = data.filter(h => h.name === currentUser.name);
+  }
+
+  if(filterStatus) data=data.filter(h=>h.status===filterStatus);
+  if(filterRes) data=data.filter(h=>h.resource===filterRes);
+  document.getElementById('historyBody').innerHTML=data.map(h=>{
+    const statusColor=h.status==='Allocated'?'var(--green)':h.status==='Auto-Allocated'?'var(--purple)':h.status==='Rejected'?'var(--red)':'var(--amber)';
+    return `<tr><td class="text-xs">${new Date(h.timestamp).toLocaleString()}</td><td>${h.name}</td><td>${resourceNames[h.resource]||h.resource}</td><td>${h.action}</td><td style="color:var(--cyan)">${h.priority}</td><td>${h.wait}</td><td>${h.method}</td><td style="color:${statusColor}">${h.status}</td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// 🗺️ DIGITAL TWIN
+// ═══════════════════════════════════════
+let icuCells=[], ventCells=[], labCells=[];
+
+function renderDigitalTwin(){
+  const showHospital = !currentUser || currentUser.role !== 'student';
+  const showLab = !currentUser || currentUser.role !== 'doctor';
+  
+  // Containers
+  const icuRoot = document.getElementById('icuGrid').parentElement;
+  const ventRoot = document.getElementById('ventGrid').parentElement;
+  const labRoot = document.getElementById('labGrid').parentElement;
+  const floorRoot = document.getElementById('floorMap').parentElement;
+
+  icuRoot.style.display = showHospital ? '' : 'none';
+  ventRoot.style.display = showHospital ? '' : 'none';
+  floorRoot.style.display = showHospital ? '' : 'none';
+  labRoot.style.display = showLab ? '' : 'none';
+
+  // ICU Grid
+  if(showHospital) {
+    const icuG=document.getElementById('icuGrid');
+    icuCells=[];
+    for(let i=0;i<24;i++){
+      const status=i<resources.icuBeds.occupied?(Math.random()>0.95?'reserved':'occupied'):'available';
+      icuCells.push(status);
+    }
+    icuG.innerHTML=icuCells.map((s,i)=>{
+      const cls=s==='available'?'bed-available':s==='occupied'?'bed-occupied':s==='reserved'?'bed-reserved':'bed-maint';
+      const patient=s==='occupied'?`Patient #${100+i}`:s==='reserved'?'Reserved':'Empty';
+      return `<div class="bed-cell ${cls}" onclick="showToast('info','Bed ICU-${i+1}','Status: ${s}')" title="ICU-${i+1}">B${i+1}<div class="bed-tooltip glass p-3"><strong>ICU-${i+1}</strong><br>${patient}<br>${s==='occupied'?'Since 2hrs ago<br>ETA Free: ~2hrs':s==='available'?'Available now':'Reserved'}</div></div>`;
+    }).join('');
+    // Ventilator Grid
+    const ventG=document.getElementById('ventGrid');
+    ventCells=[];
+    for(let i=0;i<20;i++){
+      ventCells.push(i<resources.ventilators.occupied?'occupied':'available');
+    }
+    ventG.innerHTML=ventCells.map((s,i)=>{
+      const cls=s==='available'?'bed-available':'bed-occupied';
+      return `<div class="bed-cell ${cls}" onclick="showToast('info','Vent V-${i+1}','Status: ${s}')">V${i+1}<div class="bed-tooltip glass p-3"><strong>Vent-${i+1}</strong><br>${s==='occupied'?'In use':'Available'}</div></div>`;
+    }).join('');
+    // Floor Map
+    renderFloorMap();
+  }
+
+  // Lab Grid
+  if(showLab) {
+    const labG=document.getElementById('labGrid');
+    const labNames=['Biochemistry','Microbiology','Pathology','Pharmacology','Anatomy'];
+    labG.innerHTML=labNames.map((n,i)=>{
+      const occ=Math.floor(Math.random()*4);const slots=['09-11','11-13','14-16','16-18'];
+      return `<div class="glass p-3 float-card" style="animation-delay:${i*0.2}s"><div style="font-size:20px;margin-bottom:4px">🧪</div><div class="text-sm font-semibold mb-2">${n}</div>${slots.map((s,si)=>`<div class="text-xs mb-1" style="padding:3px 6px;border-radius:4px;background:${si<occ?'rgba(239,68,68,0.2)':'rgba(16,185,129,0.2)'};color:${si<occ?'var(--red)':'var(--green)'}">${s} ${si<occ?'●':'○'}</div>`).join('')}</div>`;
+    }).join('');
+  }
+}
+
+function renderFloorMap(){
+  const fm=document.getElementById('floorMap');
+  const rooms=[
+    {name:'ICU Ward',span:'grid-row:1/3',pct:Math.round(resources.icuBeds.occupied/resources.icuBeds.total*100)},
+    {name:'Ward A',span:'',pct:Math.round(resources.generalBeds.occupied/resources.generalBeds.total*100*0.5)},
+    {name:'Ward B',span:'',pct:Math.round(resources.generalBeds.occupied/resources.generalBeds.total*100*0.7)},
+    {name:'Labs',span:'',pct:Math.round(resources.labs.occupied/resources.labs.total*100)},
+    {name:'Equipment Store',span:'grid-column:2/4',pct:Math.round(resources.equipment.occupied/resources.equipment.total*100)}
+  ];
+  fm.innerHTML=rooms.map(r=>{
+    const color=r.pct<60?'rgba(16,185,129,0.3)':r.pct<80?'rgba(245,158,11,0.3)':'rgba(239,68,68,0.3)';
+    const borderColor=r.pct<60?'rgba(16,185,129,0.5)':r.pct<80?'rgba(245,158,11,0.5)':'rgba(239,68,68,0.5)';
+    return `<div class="floor-room" style="${r.span?r.span+';':''}background:${color};border-color:${borderColor}" title="${r.pct}% occupied">${r.name}<div class="text-xs mt-2" style="color:var(--muted)">${r.pct}% occupied</div></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// 🛡️ ADMIN
+// ═══════════════════════════════════════
+function renderAdmin(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  // System toggles
+  const tg=document.getElementById('systemToggles');
+  const toggleNames={autoReallocation:'Auto-Reallocation Engine',antiStarvation:'Anti-Starvation Algorithm',conflictDetection:'Conflict Detection',voiceBooking:'Voice Booking',maintenanceMode:'Maintenance Mode'};
+  tg.innerHTML=Object.entries(toggleNames).map(([k,v])=>`<div class="flex items-center justify-between p-3 glass" style="border-radius:10px"><span class="text-sm">${v}</span><div class="toggle-switch ${systemToggles[k]?'on':''}" onclick="toggleSystem('${k}',this)"></div></div>`).join('');
+  // Users
+  const ub=document.getElementById('userMgmtBody');
+  ub.innerHTML=demoUsers.map((u,i)=>{
+    const statusColor=u.status==='Active'?'var(--green)':'var(--red)';
+    return `<tr><td>${u.name}</td><td><span class="role-badge">${u.role}</span></td><td class="text-xs">${u.institution}</td><td style="color:${statusColor}">${u.status}</td><td>${u.bookings}</td><td class="text-xs">${u.lastActive}</td><td><button class="btn btn-sm" onclick="toggleUserStatus(${i})">${u.status==='Active'?'Suspend':'Restore'}</button></td></tr>`;
+  }).join('');
+}
+
+function renderAdminRequests(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  const arb=document.getElementById('adminReqBody');
+  if(!arb)return;
+  const pending=allRequests.filter(r=>r.status!=='completed'&&r.status!=='rejected');
+  arb.innerHTML=pending.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${resourceNames[r.resource]||r.resource}</td><td style="color:var(--cyan)">${r.priorityScore}</td><td>${r.status}</td><td><button class="btn btn-sm btn-success" onclick="forceAssign(${r.id})">⚡ Assign</button> <button class="btn btn-sm btn-danger" onclick="rejectRequest(${r.id})">✕ Reject</button> <button class="btn btn-sm" onclick="targetEmergencyOverride(${r.id})">🚨 Override</button></td></tr>`).join('');
+}
+
+function toggleSystem(key,el){
+  systemToggles[key]=!systemToggles[key];
+  el.classList.toggle('on',systemToggles[key]);
+  showToast('info','System Toggle',`${key} is now ${systemToggles[key]?'ON':'OFF'}`);
+  if(key==='voiceBooking') renderVoice();
+}
+
+function toggleUserStatus(idx){
+  demoUsers[idx].status=demoUsers[idx].status==='Active'?'Suspended':'Active';
+  renderAdmin();
+  showToast('info','User Updated',`${demoUsers[idx].name} is now ${demoUsers[idx].status}`);
+}
+
+function boostPriority(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  req.priorityScore+=20;
+  req.events.push({time:Date.now(),text:'Priority manually boosted by admin (+20)'});
+  sortWaitlist();renderQueue();
+  showToast('info','Priority Boosted',`${req.name}'s priority increased to ${req.priorityScore}`);
+}
+
+function targetEmergencyOverride(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  showModal('🚨 Targeted Emergency Override',`<p style="color:var(--red);text-align:center;font-size:16px;margin-bottom:20px">This will forcefully seize a <strong>${resourceNames[req.resource]||req.resource}</strong> for <strong>${req.name}</strong>, bypassing all waitlist logic.</p><div class="text-center"><button class="emergency-btn" onclick="doTargetedEmergencyOverride(${id});closeModal()">🚨 CONFIRM SEIZURE</button></div>`);
+}
+
+function doTargetedEmergencyOverride(id){
+  const req=allRequests.find(r=>r.id===id);
+  if(!req)return;
+  const res=resources[req.resource];
+
+  if(res.available<=0&&res.occupied>0){res.available++;res.occupied--;}
+  if(res.available>0){res.available--;res.occupied++;}
+  
+  req.status='allocated';req.stage=2;req.method='Emergency';
+  req.events.push({time:Date.now(),text:'🚨 Emergency override — forcefully allocated'});
+  
+  const idx=waitlist.indexOf(req);
+  if(idx > -1) waitlist.splice(idx,1);
+
+  addToHistory(req,'Emergency-Allocated');
+  renderQueue();renderResources();renderDashboardMetrics();
+  
+  document.body.style.boxShadow = "inset 0 0 100px rgba(239, 68, 68, 0.8)";
+  setTimeout(() => document.body.style.boxShadow = "none", 1500);
+
+  showToast('error','🚨 Emergency Override',`${resourceNames[req.resource]} forcefully seized for ${req.name}`);
+  addNotification('🚨',`Emergency Seizure: ${resourceNames[req.resource]} → ${req.name}`, 'admin');
+}
+
+function adminAddResource(){
+  const type=document.getElementById('adminResType').value;
+  const qty=parseInt(document.getElementById('adminResQty').value)||1;
+  resources[type].total+=qty;resources[type].available+=qty;
+  renderResources();renderDashboardMetrics();renderAdmin();
+  showToast('success','Resources Added',`${qty} ${resources[type].name} added to inventory`);
+}
+function adminRemoveResource(){
+  const type=document.getElementById('adminResType').value;
+  const qty=parseInt(document.getElementById('adminResQty').value)||1;
+  const canRemove=Math.min(qty,resources[type].available);
+  if(canRemove<=0){showToast('error','Cannot Remove','No available units');return;}
+  resources[type].total-=canRemove;resources[type].available-=canRemove;
+  renderResources();renderDashboardMetrics();renderAdmin();
+  showToast('warning','Resources Removed',`${canRemove} ${resources[type].name} removed`);
+}
+function adminMaintenance(){
+  const type=document.getElementById('adminResType').value;
+  if(resources[type].available<=0){showToast('error','No Available','No units to put in maintenance');return;}
+  resources[type].available--;resources[type].total--;
+  renderResources();renderDashboardMetrics();
+  showToast('warning','Maintenance',`1 ${resources[type].name} marked under maintenance`);
+}
+
+// ═══════════════════════════════════════
+// 📈 ANALYTICS
+// ═══════════════════════════════════════
+function renderAnalytics(){
+  // Metric cards
+  const totalCap=Object.values(resources).reduce((a,r)=>a+r.total,0);
+  const totalOcc=Object.values(resources).reduce((a,r)=>a+r.occupied,0);
+  const metrics=[
+    {label:'Total Utilization',value:Math.round(totalOcc/totalCap*100)+'%',color:'var(--cyan)'},
+    {label:'Conflicts Prevented',value:conflictsPrevented,color:'var(--green)'},
+    {label:'Auto-Allocations',value:autoAllocCount,color:'var(--purple)'},
+    {label:'Avg Wait Time',value:'18 min',color:'var(--amber)'},
+    {label:'Peak Demand',value:'10:00 AM',color:'var(--pink)'},
+    {label:'System Uptime',value:'99.7%',color:'var(--green)'}
+  ];
+  document.getElementById('analyticsMetrics').innerHTML=metrics.map((m,i)=>`<div class="glass p-4 float-card text-center" style="animation-delay:${i*0.2}s"><div class="text-xs" style="color:var(--muted)">${m.label}</div><div style="font-size:22px;font-weight:800;color:${m.color};margin-top:4px">${m.value}</div></div>`).join('');
+  // Charts
+  setTimeout(()=>renderAnalyticsCharts(),100);
+}
+
+function renderAnalyticsCharts(){
+  const commonOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{family:'Inter',size:10}}}}};
+  const scaleOpts={scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(100,116,139,0.1)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(100,116,139,0.1)'}}}};
+  // Monthly
+  if(chartInstances.monthly)chartInstances.monthly.destroy();
+  chartInstances.monthly=new Chart(document.getElementById('chartMonthly'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],datasets:[{label:'Usage %',data:[62,58,71,75,68,82,88,79,73,85,90,78],backgroundColor:['#4f8ef7','#4f8ef7','#4f8ef7','#a855f7','#4f8ef7','#f59e0b','#ef4444','#a855f7','#4f8ef7','#ef4444','#ef4444','#a855f7'],borderRadius:6}]},options:{...commonOpts,...scaleOpts}});
+  // Priority
+  if(chartInstances.priority)chartInstances.priority.destroy();
+  chartInstances.priority=new Chart(document.getElementById('chartPriority'),{type:'bar',data:{labels:['Critical','Moderate','Mild','Student'],datasets:[{label:'Requests',data:[28,45,33,22],backgroundColor:['#ef4444','#f59e0b','#10b981','#4f8ef7'],borderRadius:6}]},options:{...commonOpts,...scaleOpts}});
+  // Auto-alloc
+  if(chartInstances.autoAlloc)chartInstances.autoAlloc.destroy();
+  chartInstances.autoAlloc=new Chart(document.getElementById('chartAutoAlloc'),{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Auto-Allocations',data:[18,24,21,32,28,15,22],borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.1)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#a855f7'}]},options:{...commonOpts,...scaleOpts}});
+  // User activity
+  if(chartInstances.userAct)chartInstances.userAct.destroy();
+  chartInstances.userAct=new Chart(document.getElementById('chartUserAct'),{type:'pie',data:{labels:['Admin','Doctor','Student'],datasets:[{data:[15,45,40],backgroundColor:['#00f5ff','#4f8ef7','#a855f7'],borderWidth:0}]},options:{...commonOpts}});
+  // Conflicts
+  if(chartInstances.conflicts)chartInstances.conflicts.destroy();
+  chartInstances.conflicts=new Chart(document.getElementById('chartConflicts'),{type:'bar',data:{labels:['W1','W2','W3','W4','W5','W6'],datasets:[{label:'Conflicts Prevented',data:[5,8,12,7,10,14],backgroundColor:'#ec4899',borderRadius:6}]},options:{...commonOpts,...scaleOpts}});
+  // Util donut
+  if(chartInstances.utilDonut)chartInstances.utilDonut.destroy();
+  chartInstances.utilDonut=new Chart(document.getElementById('chartUtilDonut'),{type:'doughnut',data:{labels:Object.values(resources).map(r=>r.name),datasets:[{data:Object.values(resources).map(r=>Math.round(r.occupied/r.total*100)),backgroundColor:['#ef4444','#f59e0b','#a855f7','#10b981','#4f8ef7'],borderWidth:0}]},options:{...commonOpts,cutout:'60%'}});
+}
+
+function generateReport(){
+  let report='═══════════════════════════════════════\n';
+  report+='    NOVAMED AI — ANALYTICS REPORT\n';
+  report+='═══════════════════════════════════════\n\n';
+  report+=`Generated: ${new Date().toLocaleString()}\n\n`;
+  report+='RESOURCE UTILIZATION:\n';
+  for(const[k,r]of Object.entries(resources)){
+    report+=`  ${r.name}: ${r.occupied}/${r.total} (${Math.round(r.occupied/r.total*100)}%)\n`;
+  }
+  report+=`\nKEY METRICS:\n  Auto-Allocations: ${autoAllocCount}\n  Conflicts Prevented: ${conflictsPrevented}\n  Active Requests: ${allRequests.length}\n  Waitlisted: ${waitlist.length}\n\n`;
+  report+='ALLOCATION HISTORY (Last 10):\n';
+  allocationHistory.slice(0,10).forEach(h=>{
+    report+=`  [${new Date(h.timestamp).toLocaleTimeString()}] ${h.name} — ${resourceNames[h.resource]||h.resource} — ${h.status}\n`;
+  });
+  report+='\n═══════════════════════════════════════';
+  showModal('📊 Full Analytics Report',`<pre style="white-space:pre-wrap;font-size:12px;color:var(--text);background:rgba(0,0,0,0.3);padding:16px;border-radius:8px;max-height:400px;overflow-y:auto">${report}</pre><button class="btn btn-primary mt-4" onclick="navigator.clipboard.writeText(document.querySelector('#modalContent pre').textContent);showToast('success','Copied','Report copied to clipboard')">📋 Copy to Clipboard</button>`);
+}
+
+// ═══════════════════════════════════════
+// 🔔 ALERTS
+// ═══════════════════════════════════════
+function renderAlerts(){
+  const al=document.getElementById('alertsList');
+  al.innerHTML=notifications.map(n=>`<div class="flex items-center gap-3 p-3" style="border-bottom:1px solid var(--glass-border)"><span style="font-size:22px">${n.icon}</span><div class="flex-1"><div class="text-sm">${n.text}</div><div class="text-xs" style="color:var(--muted)">${n.time}</div></div></div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// 🎙️ VOICE BOOKING
+// ═══════════════════════════════════════
+function renderVoice(){
+  const disabled=!systemToggles.voiceBooking;
+  document.getElementById('voiceDisabledMsg').classList.toggle('hidden',!disabled);
+  document.getElementById('voiceContent').classList.toggle('hidden',disabled);
+  // Chips
+  document.getElementById('voiceChips').innerHTML=voiceCommands.map(c=>`<span class="voice-chip" onclick="simulateVoiceCommand('${c}')">${c}</span>`).join('');
+  renderVoiceHistory();
+}
+
+let voiceListening=false;
+let recognition = null;
+if ('webkitSpeechRecognition' in window) {
+  recognition = new window.webkitSpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+}
+
+function startVoice(){
+  if(!systemToggles.voiceBooking){showToast('warning','Disabled','Voice booking disabled by admin');return;}
+  if(voiceListening)return;
+  
+  if(!recognition) {
+    showToast('error', 'Browser Unsupported', 'Web Speech API is not supported in this browser for PC mic.');
+    return;
+  }
+  
+  voiceListening=true;
+  const btn=document.getElementById('micBtn');
+  const wave=document.getElementById('soundWave');
+  const status=document.getElementById('voiceStatus');
+  const result=document.getElementById('voiceResult');
+  
+  btn.classList.add('listening');
+  wave.classList.remove('hidden');
+  status.innerHTML='<span style="color:var(--red)">🔴 Listening to PC Microphone...</span>';
+  result.innerHTML='';
+
+  recognition.onresult = function(event) {
+    let interim_transcript = '';
+    let final_transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        final_transcript += event.results[i][0].transcript;
+      } else {
+        interim_transcript += event.results[i][0].transcript;
+      }
+    }
+    result.innerHTML = `<span style="color:var(--cyan);font-weight:600">"${final_transcript || interim_transcript}"</span>`;
+    
+    if (final_transcript) {
+        recognition.stop();
+        setTimeout(() => {
+           processVoiceCommand(final_transcript);
+           status.innerHTML='<span style="color:var(--green)">✅ Command processed</span>';
+        }, 500);
+    }
+  };
+  
+  recognition.onerror = function(event) {
+    status.innerHTML=`<span style="color:var(--red)">⚠️ Mic Error: ${event.error}</span>`;
+    btn.classList.remove('listening');
+    wave.classList.add('hidden');
+    voiceListening=false;
+  };
+  
+  recognition.onend = function() {
+    btn.classList.remove('listening');
+    wave.classList.add('hidden');
+    voiceListening=false;
+    if(!result.innerText) {
+        status.innerHTML='<span style="color:var(--muted)">Microphone disabled or timed out. Tap mic to try again.</span>';
+    }
+  };
+  
+  recognition.start();
+}
+
+function simulateVoiceCommand(cmd){
+  if(!systemToggles.voiceBooking){showToast('warning','Disabled','Voice booking disabled');return;}
+  const result=document.getElementById('voiceResult');
+  const status=document.getElementById('voiceStatus');
+  status.innerHTML='<span style="color:var(--amber)">Processing...</span>';
+  result.innerHTML=`<span style="color:var(--cyan);font-weight:600">"${cmd}"</span>`;
+  setTimeout(()=>{processVoiceCommand(cmd);status.innerHTML='<span style="color:var(--green)">✅ Command processed</span>';},500);
+}
+
+function processVoiceCommand(cmd){
+  voiceCommandHistory.unshift({cmd,time:new Date().toLocaleTimeString()});
+  if(voiceCommandHistory.length>5) voiceCommandHistory.pop();
+  renderVoiceHistory();
+  const lower=cmd.toLowerCase();
+  if(lower.includes('book icu')||lower.includes('icu bed')){
+    const req={id:++requestIdCounter,name:currentUser.name,age:0,condition:'Critical',resource:'icuBeds',timestamp:Date.now(),status:'pending',waitTime:0,type:'hospital',priorityScore:0,method:'Voice',events:[{time:Date.now(),text:`Voice command: "${cmd}"`}],stage:0};
+    req.priorityScore=calcPriority(req);
+    allRequests.push(req);allocateResource(req);
+    showToast('success','Voice Booking','ICU Bed request submitted via voice');
+  } else if(lower.includes('reserve')&&lower.includes('lab')){
+    showToast('success','Voice Booking','Lab reservation submitted via voice');
+    addNotification('🎙️','Lab booked via voice command');
+  } else if(lower.includes('ventilator')){
+    showToast('info','Ventilator Status',`${resources.ventilators.available} ventilators available out of ${resources.ventilators.total}`);
+  } else if(lower.includes('queue position')){
+    const myReqs=waitlist.filter(r=>r.name===currentUser.name);
+    if(myReqs.length)showToast('info','Queue Position',`You are #${myReqs[0].queuePosition} in the queue`);
+    else showToast('info','Queue','You have no active queue entries');
+  } else if(lower.includes('cancel')){
+    showToast('info','Cancel','No active bookings to cancel');
+  } else if(lower.includes('available')){
+    let msg='';
+    for(const r of Object.values(resources)) msg+=`${r.name}: ${r.available} available\n`;
+    showToast('info','Available Resources',msg);
+  }
+}
+
+function renderVoiceHistory(){
+  const vh=document.getElementById('voiceHistory');
+  if(voiceCommandHistory.length===0){vh.innerHTML='No commands yet';return;}
+  vh.innerHTML=voiceCommandHistory.map(h=>`<div style="padding:4px 0;border-bottom:1px solid var(--glass-border)"><span style="color:var(--cyan)">[${h.time}]</span> "${h.cmd}"</div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// 🔧 MODAL
+// ═══════════════════════════════════════
+function showModal(title,content){
+  document.getElementById('modalContent').innerHTML=`<h2 class="grad-text mb-4" style="font-size:20px;font-weight:700">${title}</h2>${content}`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show')}
+
+// ═══════════════════════════════════════
+// ⏱️ INTERVALS (SIMULATION ENGINE)
+// ═══════════════════════════════════════
+
+// Auto-reallocation every 30s
+setInterval(()=>{
+  if(!currentUser||!systemToggles.autoReallocation) return;
+  // Free one random resource
+  const keys=Object.keys(resources);
+  const rKey=keys[Math.floor(Math.random()*keys.length)];
+  const r=resources[rKey];
+  if(r.occupied>0){
+    r.occupied--;r.available++;
+  }
+  // Assign to top of waitlist matching this resource
+  const match=waitlist.find(w=>w.resource===rKey);
+  if(match&&r.available>0){
+    r.available--;r.occupied++;
+    match.status='allocated';match.stage=2;match.method='Auto';
+    match.events.push({time:Date.now(),text:`🤖 Auto-reallocated: ${r.name} freed → assigned`});
+    waitlist.splice(waitlist.indexOf(match),1);
+    addToHistory(match,'Auto-Allocated');
+    autoAllocCount++;
+    showToast('info','🤖 Auto-Reallocation',`${r.name} freed → assigned to ${match.name}`);
+    addNotification('🤖',`Auto-reallocation: ${r.name} → ${match.name}`);
+    // Flash row
+    const row=document.getElementById(`qrow-${match.id}`);
+    if(row){row.classList.add('flash-green');setTimeout(()=>{renderQueue()},1000);}
+  }
+  renderResources();renderDashboardMetrics();
+  if(activeSection==='queue') renderQueue();
+},30000);
+
+// Anti-starvation every 10s
+setInterval(()=>{
+  if(!currentUser||!systemToggles.antiStarvation) return;
+  waitlist.forEach(w=>{
+    w.waitTime+=5;
+    const oldScore=w.priorityScore;
+    w.priorityScore=calcPriority(w);
+    if(w.priorityScore>oldScore){
+      w.events.push({time:Date.now(),text:`Priority boosted: +${w.priorityScore-oldScore} (anti-starvation)`});
+    }
+  });
+  sortWaitlist();
+  if(activeSection==='queue') renderQueue();
+},10000);
+
+// Random alerts every 45s
+setInterval(()=>{
+  if(!currentUser) return;
+  const alertTypes=[
+    {icon:'🚨',text:'Emergency allocation request received'},
+    {icon:'✅',text:'Booking auto-confirmed for queued patient'},
+    {icon:'⏰',text:'Resource now available — next patient notified'},
+    {icon:'⚠️',text:'Potential scheduling conflict detected'},
+    {icon:'🤖',text:'Auto-reallocation engine cycle completed'},
+    {icon:'📊',text:`Capacity alert: ICU at ${Math.round(resources.icuBeds.occupied/resources.icuBeds.total*100)}%`}
+  ];
+  const alert=alertTypes[Math.floor(Math.random()*alertTypes.length)];
+  addNotification(alert.icon,alert.text);
+  if(activeSection==='alerts') renderAlerts();
+},45000);
+
+// Digital twin updates every 20s
+setInterval(()=>{
+  if(!currentUser||activeSection!=='twin') return;
+  // Randomly flip one ICU cell
+  const icuG=document.getElementById('icuGrid');
+  if(!icuG||!icuG.children.length) return;
+  const idx=Math.floor(Math.random()*24);
+  const cell=icuG.children[idx];
+  if(cell){
+    const wasOccupied=cell.classList.contains('bed-occupied');
+    cell.classList.remove('bed-available','bed-occupied','bed-reserved');
+    cell.classList.add(wasOccupied?'bed-available':'bed-occupied');
+    cell.style.animation='flashGreen 1s';
+    setTimeout(()=>cell.style.animation='',1000);
+  }
+},20000);
+
+// Live clock in topbar & queue wait times
+setInterval(()=>{
+  if(activeSection==='queue') {
+     document.querySelectorAll('.live-wait-time').forEach(el => {
+       const ts = parseInt(el.getAttribute('data-ts'));
+       if(!isNaN(ts)) {
+          const diff = Math.floor((Date.now() - ts) / 1000);
+          const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+          const secs = (diff % 60).toString().padStart(2, '0');
+          el.textContent = `${mins}m ${secs}s`;
+       }
+     });
+  }
+},1000);
+
+// Status progression for allocated requests every 15s
+setInterval(()=>{
+  if(!currentUser) return;
+  allRequests.forEach(r=>{
+    if(r.status==='allocated'&&r.stage<3){
+      r.stage++;
+      if(r.stage===3){r.status='completed';r.events.push({time:Date.now(),text:'Session completed'});}
+      else{r.events.push({time:Date.now(),text:`Status progressed to stage ${r.stage}`});}
+    }
+  });
+  if(activeSection==='queue') renderQueue();
+},15000);
+
+// ═══════════════════════════════════════
+// 🚀 INIT
+// ═══════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  if (currentUser) {
+    enterApp();
+  }
+  createParticles();
+  // Set today's date as default for lab booking
+  const dateInput=document.getElementById('cfDate');
+  if(dateInput){
+    const today=new Date().toISOString().split('T')[0];
+    dateInput.value=today;
+  }
+  // Seed some initial requests for demo
+  const seedRequests=[
+    {id:++requestIdCounter,name:'Rajesh Kumar',age:65,condition:'Critical',resource:'icuBeds',timestamp:Date.now()-600000,status:'queued',waitTime:10,queuePosition:1,type:'hospital',priorityScore:110,method:'Manual',events:[{time:Date.now()-600000,text:'Request submitted'},{time:Date.now()-300000,text:'Priority boosted: +10 (anti-starvation)'}],stage:1},
+    {id:++requestIdCounter,name:'Anita Sharma',age:45,condition:'Moderate',resource:'ventilators',timestamp:Date.now()-300000,status:'queued',waitTime:5,queuePosition:2,type:'hospital',priorityScore:65,method:'Manual',events:[{time:Date.now()-300000,text:'Request submitted'}],stage:1}
+  ];
+  allRequests.push(...seedRequests);
+  waitlist.push(...seedRequests);
+  sortWaitlist();
+  // Seed history
+  [{name:'Dr. Patel',resource:'icuBeds',status:'Allocated',priority:100,method:'Manual'},
+   {name:'Student Ravi',resource:'labs',status:'Auto-Allocated',priority:20,method:'Auto'},
+   {name:'Nurse Kim',resource:'equipment',status:'Allocated',priority:60,method:'Manual'}
+  ].forEach(h=>{
+    allocationHistory.push({timestamp:Date.now()-Math.random()*86400000,name:h.name,resource:h.resource,action:h.status,priority:h.priority,wait:Math.floor(Math.random()*30)+'m',method:h.method,status:h.status});
+  });
+  // Close notification dropdown on outside click
+  document.addEventListener('click',(e)=>{
+    if(!e.target.closest('#notifBell')&&!e.target.closest('#notifDropdown')){
+      document.getElementById('notifDropdown').classList.remove('show');
+    }
+  });
+  updateNotifBadge();
+});
+
+// ═══════════════════════════════════════
+// 🔍 GLOBAL SEARCH
+// ═══════════════════════════════════════
+function doGlobalSearch(query) {
+  const dd = document.getElementById('searchDropdown');
+  if(!query || query.trim().length === 0) {
+    dd.classList.add('hidden');
+    return;
+  }
+  
+  query = query.toLowerCase().trim();
+  
+  // Search Patients in active queue requests
+  let results = allRequests.filter(req => req.name.toLowerCase().includes(query) || (req.type && req.type.toLowerCase().includes(query)));
+  
+  // Search Resources
+  const resKeys = Object.keys(resources);
+  const matchedRes = resKeys.filter(k => resources[k].name.toLowerCase().includes(query) || k.toLowerCase().includes(query));
+  
+  dd.innerHTML = '';
+  
+  if(results.length === 0 && matchedRes.length === 0) {
+     dd.innerHTML = `<div class="p-3 text-center text-xs text-muted">No results found for "${query}"</div>`;
+  } else {
+     // Show resources
+     matchedRes.forEach(k => {
+        const r = resources[k];
+        // Enforce role visibility
+        if (currentUser && currentUser.role === 'student' && k !== 'labs') return;
+        
+        dd.innerHTML += `
+          <div class="search-item" onclick="navigate('resources'); document.getElementById('globalSearchInput').value=''; document.getElementById('searchDropdown').classList.add('hidden')">
+            <div>
+              <span class="search-item-title">${r.icon} ${r.name}</span>
+              <span class="search-item-sub">Resource Inventory (Available: <span style="color:var(--green)">${r.available}</span>)</span>
+            </div>
+          </div>
+        `;
+     });
+     
+     // Show top 5 queued patient matches
+     // Ensure queue is hidden from students
+     if(!currentUser || currentUser.role !== 'student') {
+        results.slice(0, 5).forEach(req => {
+            const statusColor = req.status==='allocated'?'var(--green)':req.status==='queued'?'var(--amber)':req.status==='rejected'?'var(--red)':'var(--blue)';
+            dd.innerHTML += `
+              <div class="search-item" onclick="navigate('queue'); showTracking(${req.id}); document.getElementById('globalSearchInput').value=''; document.getElementById('searchDropdown').classList.add('hidden')">
+                <div>
+                  <span class="search-item-title">${req.name}</span>
+                  <span class="search-item-sub">${resourceNames[req.resource]||req.resource} Request</span>
+                </div>
+                <span class="badge" style="background:${statusColor};color:#fff;font-size:10px;padding:2px 6px;border-radius:4px">${req.status.toUpperCase()}</span>
+              </div>
+            `;
+        });
+     }
+  }
+  
+  dd.classList.remove('hidden');
+}
+
+// Global click outside to close search
+document.addEventListener('click', (e) => {
+  const searchBar = document.querySelector('.topbar-search');
+  const sdd = document.getElementById('searchDropdown');
+  if(searchBar && sdd && !searchBar.contains(e.target)) {
+    sdd.classList.add('hidden');
+  }
+});
+
+</script>
+</body>
+</html>
